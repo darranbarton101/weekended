@@ -224,7 +224,7 @@ def run_scan_streaming(
     new_count, updated_count = upsert_deals(conn, final)
     cleanup_stale(conn, config.get("database", {}).get("stale_after_days", 30))
     all_deals = load_deals(conn)
-    conn.close()
+    # conn.close()  # Supabase client doesn't need closing
 
     yield (
         all_deals,
