@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "streamlit",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "cd '/Users/darran/Library/CloudStorage/OneDrive-BrightSignals/Claude/Travel Bot/travel-deal-scanner' && .venv/bin/streamlit run app.py --server.headless true --server.port 8501"],
+      "port": 8501,
+      "autoPort": false
+    }
+  ]
+}

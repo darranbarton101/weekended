@@ -1,0 +1,20 @@
+# Secrets — never commit these
+run_scanner.sh
+.env
+
+# Runtime data
+data/
+logs/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.Python
+
+# macOS
+.DS_Store
+
+# Streamlit
+.streamlit/

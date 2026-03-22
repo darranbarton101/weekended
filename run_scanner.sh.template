@@ -1,0 +1,21 @@
+#!/bin/bash
+# run_scanner.sh — background scan wrapper for launchd
+#
+# SETUP:
+# 1. Copy this file to run_scanner.sh  (cp run_scanner.sh.template run_scanner.sh)
+# 2. Fill in your actual credentials below
+# 3. chmod +x run_scanner.sh
+# 4. run_scanner.sh is in .gitignore — it will NOT be committed
+#
+# This script is called by com.darran.travelscanner.plist every Sunday at 08:00.
+
+PROJ_DIR="/Users/darran/Library/CloudStorage/OneDrive-BrightSignals/Claude/Travel Bot/travel-deal-scanner"
+
+# ── Credentials (fill these in) ──────────────────────────────────────────────
+export SERPAPI_KEY="YOUR_SERPAPI_KEY_HERE"
+# No key needed for Ryanair farefinder
+
+# ── Run scanner ───────────────────────────────────────────────────────────────
+cd "$PROJ_DIR" || exit 1
+"$PROJ_DIR/.venv/bin/python" -m travel_scanner.scanner \
+    >> "$PROJ_DIR/logs/launchd_stdout.log" 2>&1
