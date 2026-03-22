@@ -1137,7 +1137,7 @@ if _is_searching:
         # Clear old results — wipe DB so stale deals don't persist
         conn = get_connection(db_path)
         clear_all_deals(conn)
-        conn.close()
+        # conn.close()  # Supabase client doesn't need closing
 
 
 
@@ -1256,7 +1256,7 @@ if _is_searching:
 
         conn = get_connection(db_path)
         all_deals = load_deals(conn)
-        conn.close()
+        # conn.close()  # Supabase client doesn't need closing
         st.session_state["deals"] = all_deals
         st.rerun()
 
@@ -1265,7 +1265,7 @@ if _is_searching:
 if "deals" not in st.session_state:
     conn = get_connection(db_path)
     st.session_state["deals"] = load_deals(conn)
-    conn.close()
+    # conn.close()  # Supabase client doesn't need closing
 
 # Filter deals to only show results from currently selected airports
 _all_deals = st.session_state.get("deals", [])
@@ -1503,7 +1503,7 @@ with tab_all:
 
         conn = get_connection(db_path)
         mark_notified(conn, [d.id for d in dest_deals if not d.notified])
-        conn.close()
+        # conn.close()  # Supabase client doesn't need closing
         shown_ids = {d.id for d in dest_deals}
         for deal in st.session_state["deals"]:
             if deal.id in shown_ids:
@@ -1877,7 +1877,7 @@ with tab_all:
 
         conn = get_connection(db_path)
         mark_notified(conn, [d.id for d in filtered if not d.notified])
-        conn.close()
+        # conn.close()  # Supabase client doesn't need closing
         shown_ids = {d.id for d in filtered}
         for deal in st.session_state["deals"]:
             if deal.id in shown_ids:
