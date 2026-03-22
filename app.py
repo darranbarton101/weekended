@@ -27,7 +27,7 @@ for _key in ("SERPAPI_KEY", "SUPABASE_URL", "SUPABASE_KEY"):
         except (KeyError, FileNotFoundError):
             pass
 
-from travel_scanner.api_client_serpapi import enrich_flight_times
+# enrich_flight_times removed — simplified UI
 from travel_scanner.deal_store import get_connection, load_deals, mark_notified, clear_all_deals
 from travel_scanner.models import DAY_NAMES, DAY_SHORT, ScanParams
 from travel_scanner.scanner import load_config, run_scan_streaming
@@ -108,21 +108,19 @@ def _load_favourites() -> dict:
             return json.loads(_FAV_PATH.read_text())
         except Exception:
             pass
-    return {"starred_dests": [], "fav_flights": []}
+    return {"fav_flights": []}
 
 
 def _save_favourites() -> None:
     _FAV_PATH.parent.mkdir(parents=True, exist_ok=True)
     data = {
-        "starred_dests": list(st.session_state.get("starred_dests", set())),
         "fav_flights": list(st.session_state.get("fav_flights", set())),
     }
     _FAV_PATH.write_text(json.dumps(data))
 
 
-if "starred_dests" not in st.session_state:
+if "fav_flights" not in st.session_state:
     _saved = _load_favourites()
-    st.session_state["starred_dests"] = set(_saved.get("starred_dests", []))
     st.session_state["fav_flights"] = set(_saved.get("fav_flights", []))
 
 
@@ -683,7 +681,7 @@ _airport_names = {code: label.split(" — ")[1] if " — " in label else code
 
 def _day_row(wd: int, enabled_default: bool, time_default: tuple[int, int],
              key_prefix: str) -> tuple[bool, tuple[str, str]]:
-    c1, c2, c3 = st.columns([1, 3, 9])
+    c1, c2 = st.columns([1, 5])
     enabled = c1.checkbox(
         "on", value=enabled_default,
         key=f"{key_prefix}_{wd}", label_visibility="collapsed",
@@ -698,18 +696,8 @@ def _day_row(wd: int, enabled_default: bool, time_default: tuple[int, int],
         unsafe_allow_html=True,
     )
     if enabled:
-        _r = c3.slider(
-            "time", 0, 23, time_default,
-            format="%02d:00", key=f"{key_prefix}_time_{wd}",
-            label_visibility="collapsed",
-        )
-        return True, (f"{_r[0]:02d}:00", f"{_r[1]:02d}:59")
+        return True, ("00:00", "23:59")
     else:
-        c3.markdown(
-            "<p style='margin:0;padding:7px 0 0;color:rgba(255,255,255,0.2);"
-            "font-family:JetBrains Mono,monospace;font-size:0.75rem'>----</p>",
-            unsafe_allow_html=True,
-        )
         return False, ("00:00", "23:59")
 
 
@@ -817,7 +805,7 @@ if _show_search:
             st.markdown(
                 "<p style='margin:0 0 4px;color:rgba(255,255,255,0.5);font-size:0.68rem;"
                 "font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
-                "font-family:JetBrains Mono,monospace'>Departure days</p>",
+                "font-family:JetBrains Mono,monospace'>Depart on</p>",
                 unsafe_allow_html=True,
             )
             _dep_defaults = {3: (17, 23), 4: (0, 11)}
@@ -851,7 +839,7 @@ if _show_search:
             st.markdown(
                 "<p style='margin:0 0 4px;color:rgba(255,255,255,0.5);font-size:0.68rem;"
                 "font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
-                "font-family:JetBrains Mono,monospace'>Return days</p>",
+                "font-family:JetBrains Mono,monospace'>Return on</p>",
                 unsafe_allow_html=True,
             )
             _ret_defaults = {6: (17, 23), 0: (0, 11)}
@@ -1123,7 +1111,6 @@ if run_search:
     st.session_state.pop("deals", None)
     st.session_state.pop("last_log", None)
     st.session_state["selected_dest"] = None
-    st.session_state["starred_dests"] = set()  # Reset stars for new search
     st.session_state.pop("_enriched_flights", None)
     st.rerun()
 
@@ -1343,29 +1330,15 @@ with tab_all:
             if st.button("← Back"):
                 st.session_state["selected_dest"] = None
                 st.rerun()
-        with bc2:
-            _is_starred = selected in st.session_state["starred_dests"]
-            _at_cap = len(st.session_state["starred_dests"]) >= 3 and not _is_starred
-            _star_label = "★ Starred" if _is_starred else ("☆ Star (3/3)" if _at_cap else "☆ Star")
-            if st.button(_star_label, key="star_detail", disabled=_at_cap):
-                if _is_starred:
-                    st.session_state["starred_dests"].discard(selected)
-                else:
-                    if len(st.session_state["starred_dests"]) < 3:
-                        st.session_state["starred_dests"].add(selected)
-                _save_favourites()
-                st.rerun()
 
         cheapest = min(dest_deals, key=lambda d: d.price_gbp)
         airlines_str = ", ".join(sorted({d.airline or "?" for d in dest_deals}))
         country = cheapest.destination_country or ""
 
-        _star_icon = "★ " if selected in st.session_state["starred_dests"] else ""
-
         st.markdown(
             f"<div style='margin:8px 0 4px'>"
             f"<span style='font-size:2rem;font-weight:900;color:#fff;text-transform:uppercase;"
-            f"letter-spacing:-0.01em'>{_star_icon}{selected}</span>"
+            f"letter-spacing:-0.01em'>{selected}</span>"
             + (f"<span style='color:rgba(255,255,255,0.5);font-family:JetBrains Mono,monospace;"
                f"font-size:0.8rem;margin-left:14px'>{country}</span>" if country else "")
             + f"</div>"
@@ -1404,27 +1377,6 @@ with tab_all:
 
         st.markdown('<div class="dot-separator"></div>', unsafe_allow_html=True)
 
-        # Check for enriched flight data from google_flights
-        if "_enriched_flights" not in st.session_state:
-            st.session_state["_enriched_flights"] = {}
-
-        # Collect enriched flights for this destination
-        _enriched_for_dest = {}
-        for d in dest_deals:
-            _key = f"{d.origin}|{d.destination}|{d.outbound_departure.strftime('%Y-%m-%d') if hasattr(d.outbound_departure, 'strftime') else d.outbound_departure}|{d.return_departure.strftime('%Y-%m-%d') if hasattr(d.return_departure, 'strftime') else d.return_departure}"
-            if _key in st.session_state["_enriched_flights"]:
-                _enriched_for_dest[_key] = st.session_state["_enriched_flights"][_key]
-
-        _is_enriched = bool(_enriched_for_dest)
-
-        if _is_enriched:
-            st.markdown(
-                "<span style='font-family:JetBrains Mono,monospace;font-size:0.65rem;"
-                "color:rgba(0,255,100,0.5);letter-spacing:0.08em;text-transform:uppercase'>"
-                "✓ SHOWING VERIFIED FLIGHT TIMES</span>",
-                unsafe_allow_html=True,
-            )
-
         st.markdown('<div class="dot-separator"></div>', unsafe_allow_html=True)
 
         sorted_deals = sorted(dest_deals, key=lambda d: d.price_gbp)
@@ -1435,28 +1387,6 @@ with tab_all:
             _heart = "♥" if _is_fav else ""
             _border_col = "#fff" if _is_fav else "rgba(255,255,255,0.2)"
             _bg = "rgba(255,255,255,0.08)" if _is_fav else "transparent"
-
-            # Check for enriched flight time data
-            _deal_key = f"{deal.origin}|{deal.destination}|{deal.outbound_departure.strftime('%Y-%m-%d') if hasattr(deal.outbound_departure, 'strftime') else deal.outbound_departure}|{deal.return_departure.strftime('%Y-%m-%d') if hasattr(deal.return_departure, 'strftime') else deal.return_departure}"
-            _enriched = _enriched_for_dest.get(_deal_key, [])
-
-            _flight_time_html = ""
-            if _enriched:
-                _best = _enriched[0]
-                _dep_time = _best.get("departure_time", "")
-                _arr_time = _best.get("arrival_time", "")
-                _duration = _best.get("duration_mins", 0)
-                _dur_str = f"{_duration // 60}h{_duration % 60:02d}m" if _duration else ""
-                _flight_time_html = (
-                    f"&nbsp;──&nbsp; <b style='color:#fff'>"
-                    f"✈ {_dep_time} → {_arr_time}</b>"
-                    + (f" <span style='color:rgba(255,255,255,0.5)'>({_dur_str})</span>" if _dur_str else "")
-                )
-                _time_badge = ("<span style='background:rgba(0,255,100,0.15);color:#6f6;border:1px solid rgba(0,255,100,0.3);"
-                               "padding:1px 6px;font-size:0.58rem;margin-left:8px;letter-spacing:0.05em'>EXACT</span>")
-            else:
-                _time_badge = ("<span style='background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.35);border:1px solid rgba(255,255,255,0.15);"
-                               "padding:1px 6px;font-size:0.58rem;margin-left:8px;letter-spacing:0.05em'>INDICATIVE</span>")
 
             _deal_html = (
                 f'<div style="background:{_bg};border:2px solid {_border_col};'
@@ -1469,8 +1399,6 @@ with tab_all:
                 f' ── {deal.airline}'
                 f' ── {deal.nights}N'
                 f' ── {deal.origin}'
-                f'{_flight_time_html}'
-                f'{_time_badge}'
                 f'</div>'
                 f'<span style="color:#fff;font-size:1.2rem">{_heart}</span>'
                 f'</div>'
@@ -1513,7 +1441,7 @@ with tab_all:
 
     elif filtered:
         groups = _group_destinations(filtered)
-        starred = st.session_state.get("starred_dests", set())
+        # Summary page — destination cards
 
         if sort_opt == "Price":
             sorted_groups = sorted(groups.values(), key=lambda g: g["min_price"])
@@ -1522,95 +1450,16 @@ with tab_all:
         else:
             sorted_groups = sorted(groups.values(), key=lambda g: -g["deal_count"])
 
-        # Starred counter + enrichment button
-        _n_starred = len(starred)
-        _star_status = f"{_n_starred}/3 STARRED" if _n_starred else "STAR UP TO 3 FOR FLIGHT DETAILS"
-
         st.markdown(
             f"<span style='font-family:JetBrains Mono,monospace;font-size:0.7rem;"
             f"color:rgba(255,255,255,0.4);letter-spacing:0.1em;text-transform:uppercase'>"
-            f"{len(groups)} destinations ———— {len(filtered)} total options ———— {_star_status}</span>",
+            f"{len(groups)} destinations ———— {len(filtered)} total options</span>",
             unsafe_allow_html=True,
         )
 
-        # Initialise enrichment cache
-        if "_enriched_flights" not in st.session_state:
-            st.session_state["_enriched_flights"] = {}
-
-        # Build starred deal lookup for enrichment (used after card grid)
-        _starred_dest_codes = {}
-        if starred:
-            for d in filtered:
-                city = d.destination_city or d.destination
-                if city in starred:
-                    _key = f"{d.origin}|{d.destination}|{d.outbound_departure.strftime('%Y-%m-%d') if hasattr(d.outbound_departure, 'strftime') else d.outbound_departure}|{d.return_departure.strftime('%Y-%m-%d') if hasattr(d.return_departure, 'strftime') else d.return_departure}"
-                    if _key not in _starred_dest_codes:
-                        _starred_dest_codes[_key] = d
-
-        # Explanatory text
-        _has_enrichment = bool(st.session_state.get("_enriched_flights"))
-        if _has_enrichment:
-            # Post-enrichment: show results summary
-            _enrich_results = st.session_state.get("_enrich_results", {})
-            if _enrich_results:
-                _summary_parts = []
-                for _city, _info in _enrich_results.items():
-                    _matched = _info["matched"]
-                    _total = _info["total"]
-                    if _matched == _total:
-                        _summary_parts.append(f"<b>{_city}</b>: all {_total} dates match")
-                    elif _matched == 0:
-                        _summary_parts.append(f"<b>{_city}</b>: no flights in your time range")
-                    else:
-                        _summary_parts.append(f"<b>{_city}</b>: {_matched} of {_total} dates have flights in your time range")
-                st.markdown(
-                    f"<p style='font-family:JetBrains Mono,monospace;font-size:0.72rem;"
-                    f"color:rgba(0,255,100,0.6);letter-spacing:0.06em;margin:4px 0 12px'>"
-                    f"✓ Flight times checked — " + " · ".join(_summary_parts) + "</p>",
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    "<p style='font-family:JetBrains Mono,monospace;font-size:0.72rem;"
-                    "color:rgba(0,255,100,0.5);letter-spacing:0.06em;margin:4px 0 12px'>"
-                    "✓ Flight time data loaded for starred destinations</p>",
-                    unsafe_allow_html=True,
-                )
-        elif _n_starred < 3:
-            st.markdown(
-                "<p style='font-family:JetBrains Mono,monospace;font-size:0.72rem;"
-                "color:rgba(255,255,255,0.5);letter-spacing:0.06em;margin:4px 0 4px'>"
-                "<b>Prices below match your dates but flight times haven't been verified yet</b></p>",
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                "<p style='font-family:JetBrains Mono,monospace;font-size:0.62rem;"
-                "color:rgba(255,255,255,0.35);letter-spacing:0.05em;margin:0 0 12px'>"
-                "★ Choose up to 3 destinations, then search for flights within your time range</p>",
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                "<p style='font-family:JetBrains Mono,monospace;font-size:0.72rem;"
-                "color:rgba(255,255,255,0.5);letter-spacing:0.06em;margin:4px 0 4px'>"
-                "<b>Prices below match your dates but flight times haven't been verified yet</b></p>",
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                "<p style='font-family:JetBrains Mono,monospace;font-size:0.62rem;"
-                "color:rgba(255,255,255,0.35);letter-spacing:0.05em;margin:0 0 12px'>"
-                "★ 3 selected — scroll down to search for flights within your time range</p>",
-                unsafe_allow_html=True,
-            )
-
-        # After enrichment, only show starred destinations
-        _display_groups = sorted_groups
-        if _has_enrichment and starred:
-            _display_groups = [g for g in sorted_groups if g["city"] in starred]
-
         COLS_PER_ROW = 3
-        for row_start in range(0, len(_display_groups), COLS_PER_ROW):
-            row_groups = _display_groups[row_start:row_start + COLS_PER_ROW]
+        for row_start in range(0, len(sorted_groups), COLS_PER_ROW):
+            row_groups = sorted_groups[row_start:row_start + COLS_PER_ROW]
             cols = st.columns(COLS_PER_ROW)
             for col, g in zip(cols, row_groups):
                 with col:
@@ -1622,28 +1471,16 @@ with tab_all:
                     origins_list = sorted(g["origins"])
                     example_dep = g["example_dep"]
                     example_nights = g["example_nights"]
-                    is_starred = city in starred
                     plural = "s" if count != 1 else ""
-
-                    # After enrichment, show "X dates match your time"
-                    _enrich_results = st.session_state.get("_enrich_results", {})
-                    if _has_enrichment and city in _enrich_results:
-                        _matched = _enrich_results[city]["matched"]
-                        _total = _enrich_results[city]["total"]
-                        _date_text = f"<b style='color:rgba(0,255,100,0.7)'>{_matched} of {_total} date{plural} match your time</b>"
-                    else:
-                        _date_text = f"<b style='color:rgba(255,255,255,0.7)'>{count} date{plural}</b>"
+                    _date_text = f"<b style='color:rgba(255,255,255,0.7)'>{count} date{plural}</b>"
 
                     # Visual card container
-                    _border_color = "rgba(255,255,255,0.9)" if is_starred else "rgba(255,255,255,0.15)"
-                    _bg = "rgba(255,255,255,0.08)" if is_starred else "rgba(0,0,0,0.1)"
-                    _star_badge = "<span style='color:#FFD700;font-size:1rem;margin-right:6px'>★</span>" if is_starred else ""
                     st.markdown(
-                        f"<div style='border:2px solid {_border_color};background:{_bg};"
+                        f"<div style='border:2px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.1);"
                         f"padding:12px 14px 8px;margin-bottom:2px;border-radius:4px'>"
                         f"<div style='display:flex;justify-content:space-between;align-items:baseline'>"
-                        f"<span>{_star_badge}<b style='color:#fff;font-size:0.95rem;letter-spacing:0.03em'>"
-                        f"{city.upper()}</b></span>"
+                        f"<b style='color:#fff;font-size:0.95rem;letter-spacing:0.03em'>"
+                        f"{city.upper()}</b>"
                         f"<b style='color:#fff;font-size:1.05rem'>£{price:.0f}</b>"
                         f"</div>"
                         f"<div style='font-family:JetBrains Mono,monospace;font-size:0.6rem;"
@@ -1655,22 +1492,10 @@ with tab_all:
                     )
 
                     # Action buttons row
-                    _bc1, _bc2, _bc3 = st.columns([2, 2, 1])
+                    _bc1, _bc3 = st.columns([3, 1])
                     with _bc1:
                         if st.button("View deals", key=f"view_{city}", use_container_width=True):
                             st.session_state["selected_dest"] = city
-                            st.rerun()
-                    with _bc2:
-                        _is_s = city in starred
-                        _at_cap = len(starred) >= 3 and not _is_s
-                        _s_lbl = "★ Starred" if _is_s else ("☆ Star (3/3)" if _at_cap else "☆ Star")
-                        if st.button(_s_lbl, key=f"star_{city}", disabled=_at_cap, use_container_width=True):
-                            if _is_s:
-                                st.session_state["starred_dests"].discard(city)
-                            else:
-                                if len(st.session_state["starred_dests"]) < 3:
-                                    st.session_state["starred_dests"].add(city)
-                            _save_favourites()
                             st.rerun()
                     with _bc3:
                         _map_query = f"{city} {country}"
@@ -1697,183 +1522,6 @@ with tab_all:
                                 f"style='color:rgba(100,180,255,0.8)'>Open in Google Maps →</a></p>",
                                 unsafe_allow_html=True,
                             )
-
-        # Enrichment button at bottom of card grid
-        if starred:
-            _unenriched = [k for k in _starred_dest_codes if k not in st.session_state["_enriched_flights"]]
-            if _unenriched:
-                st.markdown("<div style='margin-top:12px'></div>", unsafe_allow_html=True)
-                if st.button("✈ Get only flights within your time range", use_container_width=True, type="primary"):
-                    _enrich_phrases = [
-                        "Checking departure boards",
-                        "Scanning gate assignments",
-                        "Reading the timetables",
-                        "Cross-checking flight schedules",
-                        "Verifying seat availability",
-                        "Matching your time windows",
-                        "Filtering by your preferences",
-                        "Confirming departure slots",
-                        "Lining up the itineraries",
-                        "Comparing connection times",
-                        "Consulting the flight manifest",
-                        "Double-checking the runway schedule",
-                    ]
-                    _total_enrich = len(_unenriched)
-
-                    # Build per-city deal counts for summary
-                    _city_deal_counts: dict[str, int] = {}
-                    for k in _unenriched:
-                        _d = _starred_dest_codes[k]
-                        _c = _d.destination_city or _d.destination
-                        _city_deal_counts[_c] = _city_deal_counts.get(_c, 0) + 1
-
-                    _enrich_cities = list(_city_deal_counts.keys())
-
-                    # Show greyed-out destination cards during processing
-                    _greyed_cards_slot = st.empty()
-                    _greyed_html_parts = []
-                    for _gc in _enrich_cities:
-                        _gc_count = _city_deal_counts[_gc]
-                        _greyed_html_parts.append(
-                            f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);'
-                            f'border-radius:4px;padding:8px 12px;flex:1;min-width:160px;opacity:0.4">'
-                            f'<div style="display:flex;justify-content:space-between;align-items:baseline">'
-                            f'<span style="font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;'
-                            f'font-size:0.72rem;letter-spacing:0.04em">{_gc}</span>'
-                            f'<span style="font-family:JetBrains Mono,monospace;font-size:0.6rem;'
-                            f'color:rgba(255,255,255,0.3);letter-spacing:0.06em">⏳ CHECKING</span>'
-                            f'</div>'
-                            f'<div style="color:rgba(255,255,255,0.25);font-family:JetBrains Mono,monospace;'
-                            f'font-size:0.55rem;margin-top:3px;letter-spacing:0.08em">'
-                            f'{_gc_count} date{"s" if _gc_count != 1 else ""} to verify</div>'
-                            f'</div>'
-                        )
-                    _greyed_cards_slot.markdown(
-                        '<div style="display:flex;gap:8px;margin-bottom:12px">' + "".join(_greyed_html_parts) + '</div>',
-                        unsafe_allow_html=True,
-                    )
-
-                    _enrich_summary = st.empty()
-                    _enrich_summary.markdown(
-                        f"<p style='font-family:JetBrains Mono,monospace;font-size:0.78rem;"
-                        f"color:rgba(255,255,255,0.8);letter-spacing:0.06em;margin:8px 0 4px'>"
-                        f"CHECKING {_total_enrich} FLIGHT{'S' if _total_enrich != 1 else ''} ACROSS "
-                        f"{', '.join(c.upper() for c in _enrich_cities)}</p>",
-                        unsafe_allow_html=True,
-                    )
-                    _enrich_phrase_slot = st.empty()
-                    _bar = st.progress(0.0)
-                    _enrich_status = st.empty()
-                    _last_phrase_idx = -1
-
-                    # Track results per city
-                    _city_matched: dict[str, int] = {c: 0 for c in _enrich_cities}
-
-                    for idx, key in enumerate(_unenriched):
-                        deal = _starred_dest_codes[key]
-                        city = deal.destination_city or deal.destination
-                        pct = int((idx + 1) / _total_enrich * 100)
-
-                        # Rotate fun phrases
-                        if idx != _last_phrase_idx:
-                            _phrase = random.choice(_enrich_phrases)
-                            _enrich_phrase_slot.markdown(
-                                f'<p class="scan-status">{_phrase}</p>',
-                                unsafe_allow_html=True,
-                            )
-                            _last_phrase_idx = idx
-
-                        out_str = deal.outbound_departure.strftime("%Y-%m-%d") if hasattr(deal.outbound_departure, 'strftime') else str(deal.outbound_departure)
-                        ret_str = deal.return_departure.strftime("%Y-%m-%d") if hasattr(deal.return_departure, 'strftime') else str(deal.return_departure)
-                        _airport_name = _airport_names.get(deal.origin, deal.origin)
-
-                        _enrich_status.markdown(
-                            f"<p style='font-family:JetBrains Mono,monospace;font-size:0.72rem;"
-                            f"color:rgba(255,255,255,0.6);letter-spacing:0.05em;margin:2px 0'>"
-                            f"[{pct}%] {_airport_name} → {city} · {out_str}</p>",
-                            unsafe_allow_html=True,
-                        )
-                        _bar.progress((idx + 1) / _total_enrich)
-
-                        _out_times = None
-                        _ret_times = None
-                        _dep_wd = deal.outbound_departure.weekday() if hasattr(deal.outbound_departure, 'weekday') else None
-                        _ret_wd = deal.return_departure.weekday() if hasattr(deal.return_departure, 'weekday') else None
-                        if _dep_wd is not None and _dep_wd in scan_params.departure_days:
-                            _from, _to = scan_params.departure_days[_dep_wd]
-                            _out_times = f"{int(_from.split(':')[0])},{int(_to.split(':')[0])}"
-                        if _ret_wd is not None and _ret_wd in scan_params.return_days:
-                            _from, _to = scan_params.return_days[_ret_wd]
-                            _ret_times = f"{int(_from.split(':')[0])},{int(_to.split(':')[0])}"
-
-                        flights = enrich_flight_times(
-                            origin=deal.origin,
-                            destination=deal.destination,
-                            out_date_str=out_str,
-                            ret_date_str=ret_str,
-                            outbound_times=_out_times,
-                            return_times=_ret_times,
-                        )
-                        st.session_state["_enriched_flights"][key] = flights
-                        if flights:
-                            _city_matched[city] = _city_matched.get(city, 0) + 1
-
-                        # Update greyed cards — mark completed cities with a tick
-                        _updated_cards = []
-                        for _gc in _enrich_cities:
-                            _gc_total = _city_deal_counts[_gc]
-                            # Count how many of this city's deals have been processed so far
-                            _gc_done = sum(1 for _k in list(st.session_state["_enriched_flights"].keys())
-                                           if _k in _starred_dest_codes and
-                                           (_starred_dest_codes[_k].destination_city or _starred_dest_codes[_k].destination) == _gc)
-                            if _gc_done >= _gc_total:
-                                _gc_matched = _city_matched.get(_gc, 0)
-                                _updated_cards.append(
-                                    f'<div style="background:rgba(0,255,100,0.06);border:1px solid rgba(0,255,100,0.25);'
-                                    f'border-radius:4px;padding:8px 12px;flex:1;min-width:160px">'
-                                    f'<div style="display:flex;justify-content:space-between;align-items:baseline">'
-                                    f'<span style="font-weight:700;color:rgba(255,255,255,0.8);text-transform:uppercase;'
-                                    f'font-size:0.72rem;letter-spacing:0.04em">{_gc}</span>'
-                                    f'<span style="font-family:JetBrains Mono,monospace;font-size:0.6rem;'
-                                    f'color:rgba(0,255,100,0.6);letter-spacing:0.06em">✓ DONE</span>'
-                                    f'</div>'
-                                    f'<div style="color:rgba(0,255,100,0.5);font-family:JetBrains Mono,monospace;'
-                                    f'font-size:0.55rem;margin-top:3px;letter-spacing:0.08em">'
-                                    f'{_gc_matched} of {_gc_total} dates match</div>'
-                                    f'</div>'
-                                )
-                            else:
-                                _updated_cards.append(
-                                    f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);'
-                                    f'border-radius:4px;padding:8px 12px;flex:1;min-width:160px;opacity:0.4">'
-                                    f'<div style="display:flex;justify-content:space-between;align-items:baseline">'
-                                    f'<span style="font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;'
-                                    f'font-size:0.72rem;letter-spacing:0.04em">{_gc}</span>'
-                                    f'<span style="font-family:JetBrains Mono,monospace;font-size:0.6rem;'
-                                    f'color:rgba(255,255,255,0.3);letter-spacing:0.06em">⏳ CHECKING</span>'
-                                    f'</div>'
-                                    f'<div style="color:rgba(255,255,255,0.25);font-family:JetBrains Mono,monospace;'
-                                    f'font-size:0.55rem;margin-top:3px;letter-spacing:0.08em">'
-                                    f'{_gc_total - _gc_done} remaining</div>'
-                                    f'</div>'
-                                )
-                        _greyed_cards_slot.markdown(
-                            '<div style="display:flex;gap:8px;margin-bottom:12px">' + "".join(_updated_cards) + '</div>',
-                            unsafe_allow_html=True,
-                        )
-
-                    # Save enrichment results summary for display after rerun
-                    st.session_state["_enrich_results"] = {
-                        c: {"matched": _city_matched.get(c, 0), "total": _city_deal_counts[c]}
-                        for c in _enrich_cities
-                    }
-
-                    _greyed_cards_slot.empty()
-                    _enrich_summary.empty()
-                    _enrich_phrase_slot.empty()
-                    _enrich_status.empty()
-                    _bar.empty()
-                    st.rerun()
 
         conn = get_connection(db_path)
         mark_notified(conn, [d.id for d in filtered if not d.notified])
@@ -1905,59 +1553,15 @@ with tab_all:
 
 with tab_favs:
     fav_ids = st.session_state.get("fav_flights", set())
-    starred_dests = st.session_state.get("starred_dests", set())
 
-    if not fav_ids and not starred_dests:
+    if not fav_ids:
         st.markdown(
             "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.4);"
             "font-size:0.8rem;padding:2rem 0;letter-spacing:0.05em'>"
-            "NO FAVOURITES YET — STAR DESTINATIONS WITH ☆ OR FAVOURITE FLIGHTS WITH ♡</p>",
+            "NO FAVOURITES YET — CLICK ♡ ON A FLIGHT TO SAVE IT HERE</p>",
             unsafe_allow_html=True,
         )
     else:
-        if starred_dests:
-            st.markdown(
-                "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.5);"
-                "font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
-                "margin-bottom:8px'>★ Starred Destinations</p>",
-                unsafe_allow_html=True,
-            )
-            starred_deals = [d for d in deals if (d.destination_city or d.destination) in starred_dests]
-            if starred_deals:
-                groups = _group_destinations(starred_deals)
-                sorted_g = sorted(groups.values(), key=lambda g: g["min_price"])
-                for g in sorted_g:
-                    gc1, gc2, gc3 = st.columns([4, 1, 1])
-                    with gc1:
-                        st.markdown(
-                            f"<span style='font-family:JetBrains Mono,monospace;font-size:0.78rem;"
-                            f"color:rgba(255,255,255,0.6);letter-spacing:0.05em'>"
-                            f"<b style='color:#fff'>★ {g['city'].upper()}</b>"
-                            f" ———— {g['country'].upper()}"
-                            f" ———— FROM £{g['min_price']:.0f}"
-                            f" ———— {g['deal_count']} DATES</span>",
-                            unsafe_allow_html=True,
-                        )
-                    with gc2:
-                        if st.button("View", key=f"fav_view_{g['city']}", use_container_width=True):
-                            st.session_state["selected_dest"] = g["city"]
-                            st.rerun()
-                    with gc3:
-                        if st.button("Unstar", key=f"unstar_{g['city']}"):
-                            st.session_state["starred_dests"].discard(g["city"])
-                            _save_favourites()
-                            st.rerun()
-            else:
-                st.markdown(
-                    "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.3);"
-                    "font-size:0.75rem'>"
-                    + " / ".join(sorted(starred_dests))
-                    + " — NO MATCHING DEALS</p>",
-                    unsafe_allow_html=True,
-                )
-
-            st.markdown('<div class="dot-separator"></div>', unsafe_allow_html=True)
-
         if fav_ids:
             st.markdown(
                 "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.5);"
