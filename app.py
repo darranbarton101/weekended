@@ -19,6 +19,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Bridge Streamlit Cloud secrets to env vars (for deployment)
+for _key in ("SERPAPI_KEY", "SUPABASE_URL", "SUPABASE_KEY"):
+    if _key not in os.environ:
+        try:
+            os.environ[_key] = st.secrets[_key]
+        except (KeyError, FileNotFoundError):
+            pass
+
 from travel_scanner.api_client_serpapi import enrich_flight_times
 from travel_scanner.deal_store import get_connection, load_deals, mark_notified, clear_all_deals
 from travel_scanner.models import DAY_NAMES, DAY_SHORT, ScanParams
