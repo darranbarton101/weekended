@@ -768,59 +768,51 @@ if _show_search:
         )
         max_stopovers = {"Direct": 0, "1 stop": 1, "Any": 2}[stops_label]
 
-    # Day pickers — compact horizontal layout
-    _day_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    # Day pickers — pill buttons
+    _day_options = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    _day_to_idx = {name: i for i, name in enumerate(_day_options)}
+
     r2c1, r2c2 = st.columns(2)
 
     with r2c1:
-        st.markdown(
-            "<p style='margin:0 0 2px;color:rgba(255,255,255,0.5);font-size:0.68rem;"
-            "font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
-            "font-family:JetBrains Mono,monospace'>Depart on</p>",
-            unsafe_allow_html=True,
-        )
-        _dep_defaults_set = {3, 4}  # Thu, Fri
         _pref_dep = _saved_prefs.get("dep_days", {})
+        if _pref_dep:
+            _dep_default = [_day_options[int(k)] for k in _pref_dep.keys() if int(k) < 7]
+        else:
+            _dep_default = ["Thu", "Fri"]
+        _dep_selected = st.pills(
+            "Depart on", _day_options,
+            selection_mode="multi",
+            default=_dep_default,
+            key="dep_pills",
+        )
         departure_days: dict[int, tuple[str, str]] = {}
-        _dep_cols = st.columns(7)
-        for wd in range(7):
-            with _dep_cols[wd]:
-                _wd_str = str(wd)
-                if _pref_dep:
-                    _en_def = _wd_str in _pref_dep
-                else:
-                    _en_def = wd in _dep_defaults_set
-                if st.checkbox(_day_labels[wd], value=_en_def, key=f"dep_{wd}"):
-                    departure_days[wd] = ("00:00", "23:59")
+        for name in (_dep_selected or []):
+            departure_days[_day_to_idx[name]] = ("00:00", "23:59")
         if not departure_days:
-            departure_days[3] = ("17:00", "23:59")
+            departure_days[3] = ("00:00", "23:59")
 
     with r2c2:
-        st.markdown(
-            "<p style='margin:0 0 2px;color:rgba(255,255,255,0.5);font-size:0.68rem;"
-            "font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
-            "font-family:JetBrains Mono,monospace'>Return on</p>",
-            unsafe_allow_html=True,
-        )
-        _ret_defaults_set = {6}  # Sun
         _pref_ret = _saved_prefs.get("ret_days", {})
+        if _pref_ret:
+            _ret_default = [_day_options[int(k)] for k in _pref_ret.keys() if int(k) < 7]
+        else:
+            _ret_default = ["Sun"]
+        _ret_selected = st.pills(
+            "Return on", _day_options,
+            selection_mode="multi",
+            default=_ret_default,
+            key="ret_pills",
+        )
         return_days: dict[int, tuple[str, str]] = {}
-        _ret_cols = st.columns(7)
-        for wd in range(7):
-            with _ret_cols[wd]:
-                _wd_str = str(wd)
-                if _pref_ret:
-                    _en_def = _wd_str in _pref_ret
-                else:
-                    _en_def = wd in _ret_defaults_set
-                if st.checkbox(_day_labels[wd], value=_en_def, key=f"ret_{wd}"):
-                    return_days[wd] = ("00:00", "23:59")
+        for name in (_ret_selected or []):
+            return_days[_day_to_idx[name]] = ("00:00", "23:59")
         if not return_days:
-            return_days[6] = ("17:00", "23:59")
+            return_days[6] = ("00:00", "23:59")
         st.markdown(
             "<p style='margin:2px 0 0;color:rgba(255,255,255,0.25);font-size:0.55rem;"
             "font-family:JetBrains Mono,monospace;letter-spacing:0.06em'>"
-            "Tip: add Mon for early morning flights back for work</p>",
+            "Tip: add Mon for early morning return flights</p>",
             unsafe_allow_html=True,
         )
 
