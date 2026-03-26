@@ -666,10 +666,48 @@ except Exception:
 
 _now_str = datetime.now().strftime("%d/%m/%y")
 
+
+@st.cache_data(ttl=3600)
+def _fetch_serpapi_credits(api_key: str) -> dict | None:
+    """Fetch remaining SerpAPI credits — cached for 1 hour."""
+    try:
+        import urllib.request, json as _json
+        url = f"https://serpapi.com/account.json?api_key={api_key}"
+        with urllib.request.urlopen(url, timeout=4) as r:
+            return _json.loads(r.read())
+    except Exception:
+        return None
+
+
+_serp_key_hdr = os.environ.get("SERPAPI_KEY", "")
+_serp_credit_html = ""
+if _serp_key_hdr:
+    _credit_data = _fetch_serpapi_credits(_serp_key_hdr)
+    if _credit_data:
+        _used = _credit_data.get("this_month_searches", 0)
+        _limit = _credit_data.get("searches_per_month", 0)
+        _remaining = max(_limit - _used, 0)
+        _pct = (_used / _limit * 100) if _limit else 0
+        if _remaining <= 10:
+            _credit_colour = "#ff0000"
+            _credit_label = f"⚠ SERPAPI: {_remaining} LEFT"
+        elif _pct >= 80:
+            _credit_colour = "#ff8c00"
+            _credit_label = f"SERPAPI: {_remaining}/{_limit}"
+        else:
+            _credit_colour = _BLACK
+            _credit_label = f"SERPAPI: {_remaining}/{_limit}"
+        _serp_credit_html = (
+            f"<span style='color:{_credit_colour};font-weight:700'>{_credit_label}</span>"
+        )
+    else:
+        _serp_credit_html = "<span>SERPAPI: —</span>"
+
 st.markdown(
     f"""<div class="header-bar">
-        <span>Last scan ———— {_last_scan_str if _last_scan_str else 'N/A'}</span>
-        <span>{_now_str} ———— Weekended ———— V.018</span>
+        <span>Last scan: {_last_scan_str if _last_scan_str else 'N/A'}</span>
+        {f'<span>{_serp_credit_html}</span>' if _serp_credit_html else ''}
+        <span>{_now_str} · V.018</span>
     </div>""",
     unsafe_allow_html=True,
 )
