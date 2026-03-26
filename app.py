@@ -624,54 +624,7 @@ db_path = config.get("database", {}).get("path", "data/deals.db")
 
 # ── Airport options ──────────────────────────────────────────────────────────
 
-UK_IRISH_AIRPORTS = {
-    "ABZ": "ABZ — Aberdeen", "BFS": "BFS — Belfast Intl",
-    "BHD": "BHD — Belfast City", "BHX": "BHX — Birmingham",
-    "BLK": "BLK — Blackpool", "BOH": "BOH — Bournemouth",
-    "BRS": "BRS — Bristol", "CWL": "CWL — Cardiff",
-    "DSA": "DSA — Doncaster Sheffield", "DUB": "DUB — Dublin",
-    "EDI": "EDI — Edinburgh", "EMA": "EMA — East Midlands",
-    "EXT": "EXT — Exeter", "GLA": "GLA — Glasgow Intl",
-    "HUY": "HUY — Humberside", "INV": "INV — Inverness",
-    "KIR": "KIR — Kerry", "LBA": "LBA — Leeds Bradford",
-    "LCY": "LCY — London City", "LGW": "LGW — London Gatwick",
-    "LHR": "LHR — London Heathrow", "LTN": "LTN — London Luton",
-    "MAN": "MAN — Manchester", "MME": "MME — Teesside",
-    "NCL": "NCL — Newcastle", "NOC": "NOC — Ireland West (Knock)",
-    "NWI": "NWI — Norwich", "ORK": "ORK — Cork",
-    "PIK": "PIK — Glasgow Prestwick", "SNN": "SNN — Shannon",
-    "SOU": "SOU — Southampton", "STN": "STN — London Stansted",
-    "SWS": "SWS — Swansea",
-}
-
-INTERNATIONAL_AIRPORTS = {
-    "AMS": "AMS — Amsterdam", "ARN": "ARN — Stockholm Arlanda",
-    "ATH": "ATH — Athens", "BCN": "BCN — Barcelona",
-    "BER": "BER — Berlin", "BGY": "BGY — Milan Bergamo",
-    "BRU": "BRU — Brussels", "BUD": "BUD — Budapest",
-    "CDG": "CDG — Paris CDG", "CPH": "CPH — Copenhagen",
-    "DUS": "DUS — Dusseldorf", "FCO": "FCO — Rome Fiumicino",
-    "FRA": "FRA — Frankfurt", "GVA": "GVA — Geneva",
-    "HAM": "HAM — Hamburg", "HEL": "HEL — Helsinki",
-    "LIS": "LIS — Lisbon", "MAD": "MAD — Madrid",
-    "MRS": "MRS — Marseille", "MUC": "MUC — Munich",
-    "MXP": "MXP — Milan Malpensa", "NAP": "NAP — Naples",
-    "OPO": "OPO — Porto", "ORY": "ORY — Paris Orly",
-    "OSL": "OSL — Oslo", "PRG": "PRG — Prague",
-    "PSA": "PSA — Pisa", "TLS": "TLS — Toulouse",
-    "VIE": "VIE — Vienna", "WAW": "WAW — Warsaw",
-    "ZAG": "ZAG — Zagreb", "ZRH": "ZRH — Zurich",
-    "KEF": "KEF — Reykjavik Keflavik", "AEY": "AEY — Akureyri",
-    "JFK": "JFK — New York JFK", "EWR": "EWR — New York Newark",
-    "LGA": "LGA — New York LaGuardia", "BOS": "BOS — Boston",
-    "IAD": "IAD — Washington Dulles", "ORD": "ORD — Chicago O'Hare",
-    "LAX": "LAX — Los Angeles", "SFO": "SFO — San Francisco",
-    "MIA": "MIA — Miami", "ATL": "ATL — Atlanta",
-    "YYZ": "YYZ — Toronto Pearson", "YUL": "YUL — Montreal",
-    "YVR": "YVR — Vancouver",
-}
-
-AIRPORT_OPTIONS = {**UK_IRISH_AIRPORTS, **INTERNATIONAL_AIRPORTS}
+from travel_scanner.airports import AIRPORT_OPTIONS
 
 # Airport code → friendly name mapping
 _airport_names = {code: label.split(" — ")[1] if " — " in label else code
@@ -785,11 +738,19 @@ if _show_search:
 
     with r1c1:
         st.caption("AIRPORTS (UP TO 3)")
-        _pref_airports = _saved_prefs.get("airports", ["GLA", "EDI"])
+        # Initialise widget state from saved prefs only on first run,
+        # then let the widget own its own value to avoid stale defaults
+        # overriding user selections on rerun.
+        if "_ms_airports" not in st.session_state:
+            _pref_airports = _saved_prefs.get("airports", ["GLA", "EDI"])
+            # Filter out any codes that no longer exist in the options list
+            st.session_state["_ms_airports"] = [
+                c for c in _pref_airports if c in AIRPORT_OPTIONS
+            ] or ["GLA", "EDI"]
         selected_airports = st.multiselect(
             "airports",
             options=list(AIRPORT_OPTIONS.keys()),
-            default=_pref_airports,
+            key="_ms_airports",
             format_func=lambda x: AIRPORT_OPTIONS.get(x, x),
             label_visibility="collapsed",
             max_selections=3,
