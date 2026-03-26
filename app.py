@@ -728,7 +728,7 @@ with _hdr_left:
     st.markdown(
         "<p style='font-family:JetBrains Mono,monospace;font-size:0.7rem;"
         "color:rgba(255,255,255,0.4);letter-spacing:0.12em;margin:-8px 0 0;"
-        "text-transform:uppercase'>Find cheap weekend flights from Scotland</p>",
+        "text-transform:uppercase'>Find cheap weekend flights</p>",
         unsafe_allow_html=True,
     )
 with _hdr_right:
