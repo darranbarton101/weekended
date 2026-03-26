@@ -288,8 +288,12 @@ st.markdown(f"""
     [data-testid="stPills"] {{
         gap: 3px !important;
     }}
-    [data-testid="stPills"] button {{
+    /* Unselected — white raised button */
+    [data-testid="stPills"] button,
+    [data-testid="stPills"] button:not([aria-checked="true"]),
+    [data-testid="stPills"] button:not([data-selected="true"]) {{
         background-color: {_BG} !important;
+        background: {_BG} !important;
         color: {_BLACK} !important;
         border: none !important;
         border-radius: 0px !important;
@@ -302,17 +306,32 @@ st.markdown(f"""
         min-width: 36px !important;
         text-align: center !important;
     }}
+    /* Text inside unselected pill */
+    [data-testid="stPills"] button p,
+    [data-testid="stPills"] button span {{
+        color: {_BLACK} !important;
+    }}
+    /* Selected — navy sunken */
     [data-testid="stPills"] button[aria-checked="true"],
     [data-testid="stPills"] button[data-selected="true"] {{
         background-color: {_NAVY} !important;
+        background: {_NAVY} !important;
         color: {_WHITE} !important;
         box-shadow: inset 1px 1px {_BORDER}, inset -1px -1px {_BG_LIGHT},
                     inset 2px 2px {_BG_DARK}, inset -2px -2px {_WHITE} !important;
         outline: 1px dotted {_WHITE} !important;
         outline-offset: -4px !important;
     }}
+    /* Text inside selected pill */
+    [data-testid="stPills"] button[aria-checked="true"] p,
+    [data-testid="stPills"] button[aria-checked="true"] span,
+    [data-testid="stPills"] button[data-selected="true"] p,
+    [data-testid="stPills"] button[data-selected="true"] span {{
+        color: {_WHITE} !important;
+    }}
     [data-testid="stPills"] button:hover:not([aria-checked="true"]) {{
         background-color: {_BG_LIGHT} !important;
+        background: {_BG_LIGHT} !important;
         color: {_BLACK} !important;
     }}
 
