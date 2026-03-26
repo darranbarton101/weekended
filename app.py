@@ -146,25 +146,28 @@ def _save_search_prefs(prefs: dict) -> None:
 _saved_prefs = _load_search_prefs()
 
 
-# ── CSS — Virgil Abloh archive aesthetic ─────────────────────────────────────
-# Bold blue, white condensed type, monospace metadata, dashed separators
+# ── CSS — Nokia 3310 LCD aesthetic ────────────────────────────────────────────
+# Dark screen, green pixel text, monospace everything, chunky and retro
 
-_BLUE = "#0035FF"
-_BLUE_DARK = "#002AD4"
-_BLUE_LIGHT = "#1A4FFF"
-_BLUE_PANEL = "#0029CC"
+_BG = "#1a1f0e"
+_BG_DARK = "#141909"
+_BG_LIGHT = "#222b12"
+_GREEN = "#7b9b3c"
+_GREEN_BRIGHT = "#a4c639"
+_GREEN_DIM = "#4a5e25"
+_GREEN_FAINT = "#2e3a18"
 
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
 
     /* ── Base ── */
     .stApp, .stApp > header {{
-        background-color: {_BLUE} !important;
+        background-color: {_BG} !important;
     }}
     .stApp {{
-        color: #ffffff;
-        font-family: 'Inter', -apple-system, sans-serif;
+        color: {_GREEN};
+        font-family: 'JetBrains Mono', monospace;
     }}
 
     /* Hide sidebar */
@@ -181,33 +184,36 @@ st.markdown(f"""
 
     /* ── Typography ── */
     h1 {{
-        color: #ffffff !important;
-        font-size: 3rem !important;
-        font-weight: 900 !important;
-        letter-spacing: -0.02em !important;
+        color: {_GREEN_BRIGHT} !important;
+        font-family: 'VT323', 'JetBrains Mono', monospace !important;
+        font-size: 4.5rem !important;
+        font-weight: 400 !important;
+        letter-spacing: 0.08em !important;
         text-transform: uppercase;
         line-height: 1 !important;
         margin-bottom: 0 !important;
+        text-shadow: 0 0 20px rgba(164,198,57,0.3);
     }}
     h2 {{
-        color: #ffffff !important;
-        font-weight: 800 !important;
-        font-size: 1.8rem !important;
-        letter-spacing: -0.01em;
+        color: {_GREEN_BRIGHT} !important;
+        font-family: 'VT323', monospace !important;
+        font-weight: 400 !important;
+        font-size: 2rem !important;
         text-transform: uppercase;
     }}
     h3 {{
-        color: #ffffff !important;
+        color: {_GREEN} !important;
+        font-family: 'JetBrains Mono', monospace !important;
         font-weight: 700 !important;
-        font-size: 1.3rem !important;
+        font-size: 1.1rem !important;
         text-transform: uppercase;
-        letter-spacing: 0.02em;
+        letter-spacing: 0.05em;
     }}
 
     /* Labels & text */
     label, .stCaption, [data-testid="stWidgetLabel"] p,
     [data-testid="stMarkdownContainer"] p {{
-        color: rgba(255,255,255,0.7) !important;
+        color: {_GREEN} !important;
         font-family: 'JetBrains Mono', monospace !important;
         font-size: 0.72rem !important;
     }}
@@ -216,53 +222,50 @@ st.markdown(f"""
     [data-testid="stSlider"] [data-testid="stThumbValue"],
     [data-testid="stSlider"] [data-testid="stTickBarMin"],
     [data-testid="stSlider"] [data-testid="stTickBarMax"] {{
-        color: #ffffff !important;
+        color: {_GREEN_BRIGHT} !important;
         font-family: 'JetBrains Mono', monospace !important;
     }}
     .stSlider > div > div > div > div {{
-        background-color: #ffffff !important;
+        background-color: {_GREEN_BRIGHT} !important;
     }}
     [data-testid="stSlider"] > div > div {{
-        background-color: rgba(255,255,255,0.2) !important;
+        background-color: {_GREEN_FAINT} !important;
     }}
 
     /* ── Radio ── */
-    .stRadio label span {{ color: rgba(255,255,255,0.5) !important; font-family: 'JetBrains Mono', monospace !important; font-size: 0.75rem !important; }}
-    .stRadio label[data-checked="true"] span {{ color: #fff !important; font-weight: 600; }}
+    .stRadio label span {{ color: {_GREEN_DIM} !important; font-family: 'JetBrains Mono', monospace !important; font-size: 0.75rem !important; }}
+    .stRadio label[data-checked="true"] span {{ color: {_GREEN_BRIGHT} !important; font-weight: 600; }}
 
     /* ── Checkbox ── */
-    .stCheckbox label span {{ color: rgba(255,255,255,0.7) !important; }}
+    .stCheckbox label span {{ color: {_GREEN} !important; }}
 
-    /* ── Dataframe ── */
-    .stDataFrame {{
-        border-radius: 0px;
-        overflow: hidden;
-        border: 2px solid #fff !important;
-    }}
-    [data-testid="stDataFrame"] table {{ background-color: {_BLUE_DARK} !important; }}
-    [data-testid="stDataFrame"] th {{
-        background-color: {_BLUE_PANEL} !important;
-        color: rgba(255,255,255,0.7) !important;
+    /* ── Pills (day picker) ── */
+    [data-testid="stPills"] button {{
+        background-color: {_BG_DARK} !important;
+        color: {_GREEN_DIM} !important;
+        border: 1px solid {_GREEN_DIM} !important;
+        border-radius: 0px !important;
         font-family: 'JetBrains Mono', monospace !important;
-        font-size: 0.68rem !important;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        font-weight: 600;
-        border-bottom: 2px solid #fff !important;
+        font-size: 0.72rem !important;
+        font-weight: 600 !important;
     }}
-    [data-testid="stDataFrame"] td {{
-        color: #fff !important;
-        font-family: 'JetBrains Mono', monospace !important;
-        font-size: 0.78rem !important;
-        border-bottom: 1px dashed rgba(255,255,255,0.15) !important;
+    [data-testid="stPills"] button[aria-checked="true"],
+    [data-testid="stPills"] button[data-selected="true"] {{
+        background-color: {_GREEN_BRIGHT} !important;
+        color: {_BG} !important;
+        border-color: {_GREEN_BRIGHT} !important;
     }}
-    [data-testid="stDataFrame"] tr:hover td {{ background-color: {_BLUE_LIGHT} !important; }}
+    [data-testid="stPills"] button:hover {{
+        background-color: {_GREEN_FAINT} !important;
+        color: {_GREEN_BRIGHT} !important;
+        border-color: {_GREEN} !important;
+    }}
 
     /* ── Buttons ── */
     .stButton > button[kind="primary"] {{
-        background-color: #000000;
-        color: #ffffff;
-        border: 2px solid #000000;
+        background-color: {_GREEN_BRIGHT};
+        color: {_BG};
+        border: 2px solid {_GREEN_BRIGHT};
         border-radius: 0px;
         font-weight: 700;
         font-size: 0.82rem;
@@ -272,22 +275,25 @@ st.markdown(f"""
         text-transform: uppercase;
         transition: all 0.1s ease;
     }}
+    .stButton > button[kind="primary"] p {{
+        color: {_BG} !important;
+    }}
     .stButton > button[kind="primary"]:hover,
     .stButton > button[kind="primary"]:focus,
     .stButton > button[kind="primary"]:active {{
-        background-color: #ffffff !important;
-        color: #000000 !important;
-        border-color: #000000 !important;
+        background-color: {_BG} !important;
+        color: {_GREEN_BRIGHT} !important;
+        border-color: {_GREEN_BRIGHT} !important;
     }}
     .stButton > button[kind="primary"]:hover p,
     .stButton > button[kind="primary"]:focus p,
     .stButton > button[kind="primary"]:active p {{
-        color: #000000 !important;
+        color: {_GREEN_BRIGHT} !important;
     }}
     .stButton > button:not([kind="primary"]) {{
         background-color: transparent !important;
-        color: rgba(255,255,255,0.7) !important;
-        border: 2px solid rgba(255,255,255,0.4) !important;
+        color: {_GREEN} !important;
+        border: 1px solid {_GREEN_DIM} !important;
         border-radius: 0px !important;
         font-size: 0.72rem;
         font-family: 'JetBrains Mono', monospace;
@@ -295,85 +301,41 @@ st.markdown(f"""
         text-transform: uppercase;
     }}
     .stButton > button:not([kind="primary"]) p {{
-        color: rgba(255,255,255,0.7) !important;
+        color: {_GREEN} !important;
     }}
     .stButton > button:not([kind="primary"]):hover,
     .stButton > button:not([kind="primary"]):focus {{
-        color: #000000 !important;
-        border-color: #fff;
-        background-color: rgba(255,255,255,0.85);
+        color: {_BG} !important;
+        border-color: {_GREEN_BRIGHT} !important;
+        background-color: {_GREEN_BRIGHT} !important;
     }}
     .stButton > button:not([kind="primary"]):hover p,
     .stButton > button:not([kind="primary"]):focus p {{
-        color: #000000 !important;
+        color: {_BG} !important;
     }}
 
     /* ── Selectbox / multiselect ── */
     .stSelectbox > div > div,
     .stMultiSelect > div > div {{
-        background-color: rgba(0,0,0,0.2) !important;
-        border-color: rgba(255,255,255,0.3) !important;
+        background-color: {_BG_DARK} !important;
+        border-color: {_GREEN_DIM} !important;
         border-radius: 0px !important;
-        color: #ffffff !important;
+        color: {_GREEN_BRIGHT} !important;
         font-family: 'JetBrains Mono', monospace !important;
     }}
     .stMultiSelect span[data-baseweb="tag"] {{
-        background-color: #fff !important;
-        color: {_BLUE} !important;
+        background-color: {_GREEN_BRIGHT} !important;
+        color: {_BG} !important;
         border-radius: 0px;
         font-weight: 600;
         font-family: 'JetBrains Mono', monospace;
     }}
 
     /* ── Progress bar ── */
-    .stProgress > div > div {{ background-color: #ffffff !important; }}
-    .stProgress {{ background-color: rgba(255,255,255,0.15); border-radius: 0px; }}
+    .stProgress > div > div {{ background-color: {_GREEN_BRIGHT} !important; }}
+    .stProgress {{ background-color: {_GREEN_FAINT}; border-radius: 0px; }}
 
     /* ── Expander ── */
-    .streamlit-expanderHeader {{
-        background-color: rgba(0,0,0,0.12) !important;
-        border-radius: 0px !important;
-        color: rgba(255,255,255,0.7) !important;
-        border: 2px solid rgba(255,255,255,0.2) !important;
-        font-family: 'JetBrains Mono', monospace !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        font-size: 0.78rem !important;
-    }}
-    .streamlit-expanderHeader:hover {{
-        background-color: rgba(0,0,0,0.2) !important;
-        border-color: rgba(255,255,255,0.4) !important;
-        color: #fff !important;
-    }}
-    .streamlit-expanderContent {{
-        background-color: rgba(0,0,0,0.1) !important;
-        border: 2px solid rgba(255,255,255,0.2) !important;
-        border-top: none !important;
-    }}
-    /* Expander toggle icon */
-    .streamlit-expanderHeader svg {{
-        fill: rgba(255,255,255,0.5) !important;
-    }}
-    .streamlit-expanderHeader:hover svg {{
-        fill: #fff !important;
-    }}
-    /* Override Streamlit's white expander summary */
-    details > summary {{
-        background-color: rgba(0,0,0,0.12) !important;
-        color: rgba(255,255,255,0.7) !important;
-        border: 2px solid rgba(255,255,255,0.2) !important;
-        border-radius: 0px !important;
-    }}
-    details > summary:hover {{
-        background-color: rgba(0,0,0,0.2) !important;
-        border-color: rgba(255,255,255,0.4) !important;
-        color: #fff !important;
-    }}
-    details[open] > summary {{
-        border-bottom: none !important;
-    }}
-    /* Target the stExpander wrapper */
     [data-testid="stExpander"] {{
         border: none !important;
         border-radius: 0px !important;
@@ -384,9 +346,9 @@ st.markdown(f"""
         background: transparent !important;
     }}
     [data-testid="stExpander"] > details > summary {{
-        background-color: rgba(0,0,0,0.12) !important;
-        color: rgba(255,255,255,0.7) !important;
-        border: 2px solid rgba(255,255,255,0.2) !important;
+        background-color: {_BG_DARK} !important;
+        color: {_GREEN} !important;
+        border: 1px solid {_GREEN_DIM} !important;
         border-radius: 0px !important;
         font-family: 'JetBrains Mono', monospace !important;
         font-weight: 600 !important;
@@ -395,92 +357,59 @@ st.markdown(f"""
         font-size: 0.78rem !important;
     }}
     [data-testid="stExpander"] > details > summary:hover {{
-        background-color: rgba(0,0,0,0.2) !important;
-        border-color: rgba(255,255,255,0.4) !important;
-        color: #fff !important;
+        background-color: {_GREEN_FAINT} !important;
+        border-color: {_GREEN} !important;
+        color: {_GREEN_BRIGHT} !important;
     }}
     [data-testid="stExpander"] > details > div {{
-        background-color: rgba(0,0,0,0.1) !important;
-        border: 2px solid rgba(255,255,255,0.2) !important;
+        background-color: {_BG_DARK} !important;
+        border: 1px solid {_GREEN_DIM} !important;
         border-top: none !important;
         border-radius: 0px !important;
+    }}
+    details > summary {{
+        background-color: {_BG_DARK} !important;
+        color: {_GREEN} !important;
+        border: 1px solid {_GREEN_DIM} !important;
+        border-radius: 0px !important;
+    }}
+    details > summary:hover {{
+        color: {_GREEN_BRIGHT} !important;
     }}
 
     /* ── Info / alerts ── */
     .stAlert {{ border-radius: 0px; }}
-    .stInfo {{
-        background-color: rgba(0,0,0,0.15) !important;
-        border: 2px solid rgba(255,255,255,0.3) !important;
-        color: #fff !important;
-    }}
 
     /* ── Tabs ── */
     .stTabs [data-baseweb="tab-list"] {{
         gap: 0;
-        border-bottom: 2px solid rgba(255,255,255,0.3);
+        border-bottom: 1px solid {_GREEN_DIM};
     }}
     .stTabs [data-baseweb="tab"] {{
-        color: rgba(255,255,255,0.4) !important;
+        color: {_GREEN_DIM} !important;
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.72rem;
         letter-spacing: 0.12em;
         text-transform: uppercase;
         font-weight: 600;
         padding: 0.7rem 2rem;
-        border-bottom: 3px solid transparent;
+        border-bottom: 2px solid transparent;
     }}
     .stTabs [aria-selected="true"] {{
-        color: #fff !important;
-        border-bottom: 3px solid #fff !important;
+        color: {_GREEN_BRIGHT} !important;
+        border-bottom: 2px solid {_GREEN_BRIGHT} !important;
         background: transparent !important;
     }}
 
     /* ── Divider ── */
-    hr {{ border-color: rgba(255,255,255,0.2) !important; border-style: dashed !important; }}
+    hr {{ border-color: {_GREEN_DIM} !important; border-style: dashed !important; }}
 
     /* ── Caption ── */
-    .stCaption {{ color: rgba(255,255,255,0.5) !important; font-family: 'JetBrains Mono', monospace !important; }}
+    .stCaption {{ color: {_GREEN_DIM} !important; font-family: 'JetBrains Mono', monospace !important; }}
 
     /* ── Links ── */
-    a {{ color: #fff !important; }}
-    a:hover {{ color: rgba(255,255,255,0.7) !important; }}
-
-    /* ── Day-picker containers ── */
-    .day-box [data-testid="stVerticalBlockBorderWrapper"] {{
-        background: rgba(0,0,0,0.2) !important;
-        border: 2px solid rgba(255,255,255,0.25) !important;
-        border-radius: 0px !important;
-    }}
-    .day-box [data-testid="stVerticalBlockBorderWrapper"] > div {{
-        background: rgba(0,0,0,0.2) !important;
-    }}
-
-    /* ── Compact search ── */
-    .search-panel .stCheckbox {{ margin-bottom: 0 !important; margin-top: 0 !important; }}
-    .search-panel .stSlider {{ margin-bottom: 0 !important; padding-top: 0 !important; }}
-    .search-panel [data-testid="stHorizontalBlock"] {{
-        align-items: center !important;
-        gap: 0.15rem !important;
-        margin-bottom: -0.1rem !important;
-    }}
-
-    /* ── Destination cards ── */
-    .dest-card {{
-        background: rgba(0,0,0,0.15);
-        border: 2px solid rgba(255,255,255,0.25);
-        padding: 20px 22px 16px;
-        margin-bottom: 6px;
-        min-height: 160px;
-        transition: all 0.15s ease;
-        position: relative;
-    }}
-    .dest-card:hover {{
-        border-color: #fff;
-        background: rgba(0,0,0,0.25);
-    }}
-    .dest-card.starred {{
-        border-left: 4px solid #fff;
-    }}
+    a {{ color: {_GREEN_BRIGHT} !important; }}
+    a:hover {{ color: {_GREEN} !important; }}
 
     /* ── Header bar ── */
     .header-bar {{
@@ -488,100 +417,54 @@ st.markdown(f"""
         align-items: center;
         justify-content: space-between;
         padding: 8px 0;
-        border-bottom: 2px dashed rgba(255,255,255,0.25);
+        border-bottom: 1px dashed {_GREEN_DIM};
         margin-bottom: 10px;
     }}
     .header-bar span {{
-        color: rgba(255,255,255,0.5);
+        color: {_GREEN_DIM};
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.68rem;
         letter-spacing: 0.12em;
         text-transform: uppercase;
     }}
 
-    /* ── Metric grid ── */
-    .metric-row {{
-        display: flex;
-        gap: 2rem;
-        padding: 6px 0;
-        border-bottom: 1px dashed rgba(255,255,255,0.15);
-    }}
-    .metric-row .metric-label {{
-        color: rgba(255,255,255,0.4);
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.65rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-    }}
-    .metric-row .metric-value {{
-        color: #fff;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.85rem;
-        font-weight: 700;
-    }}
-
-    /* ── Airline tags ── */
-    .airline-tag {{
-        display: inline-block;
-        border: 1px solid rgba(255,255,255,0.4);
-        color: rgba(255,255,255,0.8);
-        padding: 2px 8px;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.6rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        margin-right: 4px;
-        margin-bottom: 4px;
-    }}
-    .airline-tag.primary {{
-        border-color: rgba(255,255,255,0.5);
-        color: rgba(255,255,255,0.9);
-    }}
-
     /* ── Popover button ── */
-    [data-testid="stPopoverButton"] > button,
-    [data-testid="stPopoverButton"] > button[kind="secondary"] {{
+    [data-testid="stPopoverButton"] > button {{
         background-color: transparent !important;
-        color: rgba(255,255,255,0.7) !important;
-        border: 2px solid rgba(255,255,255,0.4) !important;
+        color: {_GREEN} !important;
+        border: 1px solid {_GREEN_DIM} !important;
         border-radius: 0px !important;
         font-family: 'JetBrains Mono', monospace !important;
-        font-size: 0.72rem !important;
-        letter-spacing: 0.08em !important;
-        text-transform: uppercase !important;
     }}
-    [data-testid="stPopoverButton"] > button p,
-    [data-testid="stPopoverButton"] > button[kind="secondary"] p {{
-        color: rgba(255,255,255,0.7) !important;
+    [data-testid="stPopoverButton"] > button p {{
+        color: {_GREEN} !important;
     }}
-    [data-testid="stPopoverButton"] > button:hover,
-    [data-testid="stPopoverButton"] > button[kind="secondary"]:hover {{
-        color: #000000 !important;
-        border-color: #fff !important;
-        background-color: rgba(255,255,255,0.85) !important;
+    [data-testid="stPopoverButton"] > button:hover {{
+        color: {_BG} !important;
+        border-color: {_GREEN_BRIGHT} !important;
+        background-color: {_GREEN_BRIGHT} !important;
     }}
-    [data-testid="stPopoverButton"] > button:hover p,
-    [data-testid="stPopoverButton"] > button[kind="secondary"]:hover p {{
-        color: #000000 !important;
+    [data-testid="stPopoverButton"] > button:hover p {{
+        color: {_BG} !important;
     }}
 
-    /* ── Secondary buttons (Streamlit default white) ── */
+    /* ── Secondary buttons ── */
     button[kind="secondary"] {{
         background-color: transparent !important;
-        color: rgba(255,255,255,0.7) !important;
-        border: 2px solid rgba(255,255,255,0.4) !important;
+        color: {_GREEN} !important;
+        border: 1px solid {_GREEN_DIM} !important;
         border-radius: 0px !important;
     }}
     button[kind="secondary"] p {{
-        color: rgba(255,255,255,0.7) !important;
+        color: {_GREEN} !important;
     }}
     button[kind="secondary"]:hover {{
-        color: #000000 !important;
-        background-color: rgba(255,255,255,0.85) !important;
-        border-color: #fff !important;
+        color: {_BG} !important;
+        background-color: {_GREEN_BRIGHT} !important;
+        border-color: {_GREEN_BRIGHT} !important;
     }}
     button[kind="secondary"]:hover p {{
-        color: #000000 !important;
+        color: {_BG} !important;
     }}
 
     /* ── Scanning animation ── */
@@ -593,7 +476,7 @@ st.markdown(f"""
     .scan-status {{
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.85rem;
-        color: #fff;
+        color: {_GREEN_BRIGHT};
         font-weight: 700;
         letter-spacing: 0.1em;
         text-transform: uppercase;
@@ -605,7 +488,7 @@ st.markdown(f"""
 
     /* Dotted grid decoration */
     .dot-separator {{
-        border-top: 2px dotted rgba(255,255,255,0.2);
+        border-top: 1px dotted {_GREEN_DIM};
         margin: 6px 0;
     }}
 
@@ -639,7 +522,7 @@ def _day_row(wd: int, enabled_default: bool, time_default: tuple[int, int],
         "on", value=enabled_default,
         key=f"{key_prefix}_{wd}", label_visibility="collapsed",
     )
-    _col = "#ffffff" if enabled else "rgba(255,255,255,0.3)"
+    _col = "#a4c639" if enabled else "#4a5e25"
     _wt = "600" if enabled else "400"
     c2.markdown(
         f"<p style='margin:0;padding:7px 0 0;font-size:0.78rem;"
@@ -661,12 +544,12 @@ with _hdr_left:
     # Massive impactful logo — pure HTML, no button constraints
     st.markdown(
         "<h1 style='font-family:JetBrains Mono,monospace;font-size:4.5rem;font-weight:900;"
-        "color:#fff;letter-spacing:-0.03em;line-height:0.85;margin:0 0 4px;padding:0;"
-        "text-transform:uppercase;text-shadow:0 0 80px rgba(255,255,255,0.25),"
-        "0 0 120px rgba(255,255,255,0.1);-webkit-text-stroke:1px rgba(255,255,255,0.9)'>"
+        "color:#a4c639;letter-spacing:-0.03em;line-height:0.85;margin:0 0 4px;padding:0;"
+        "text-transform:uppercase;text-shadow:0 0 80px rgba(164,198,57,0.25),"
+        "0 0 120px rgba(164,198,57,0.1);-webkit-text-stroke:1px #a4c639'>"
         "WEEKENDED</h1>"
         "<p style='font-family:JetBrains Mono,monospace;font-size:0.68rem;"
-        "color:rgba(255,255,255,0.4);letter-spacing:0.12em;margin:0;"
+        "color:#4a5e25;letter-spacing:0.12em;margin:0;"
         "text-transform:uppercase'>Find cheap weekend flights</p>",
         unsafe_allow_html=True,
     )
@@ -715,7 +598,7 @@ _show_search = st.session_state["search_open"] and not _is_searching
 
 if _show_search:
     st.markdown(
-        "<div style='background:rgba(0,0,0,0.1);border:2px solid rgba(255,255,255,0.2);"
+        "<div style='background:#1a1f0e;border:1px solid #4a5e25;"
         "padding:16px 20px 10px;margin-bottom:8px'>",
         unsafe_allow_html=True,
     )
@@ -810,7 +693,7 @@ if _show_search:
         if not return_days:
             return_days[6] = ("00:00", "23:59")
         st.markdown(
-            "<p style='margin:2px 0 0;color:rgba(255,255,255,0.25);font-size:0.55rem;"
+            "<p style='margin:2px 0 0;color:#2e3a18;font-size:0.55rem;"
             "font-family:JetBrains Mono,monospace;letter-spacing:0.06em'>"
             "Tip: add Mon for early morning return flights</p>",
             unsafe_allow_html=True,
@@ -823,7 +706,7 @@ if _show_search:
 
     with r3c1:
         _serp_status = "CONNECTED" if serpapi_key else "KEY NOT SET"
-        _status_col = "rgba(0,255,100,0.6)" if serpapi_key else "rgba(255,100,100,0.6)"
+        _status_col = "#a4c639" if serpapi_key else "#4a5e25"
         st.markdown(
             f"<span style='font-family:JetBrains Mono,monospace;font-size:0.68rem;"
             f"color:{_status_col};letter-spacing:0.08em'>● SERPAPI {_serp_status}</span>",
@@ -1002,14 +885,14 @@ def _render_live_deals_html(deals_list) -> str:
     plural = lambda n: "s" if n != 1 else ""
     for g in sorted_g[:18]:  # Show top 18
         cards.append(
-            f'<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);'
+            f'<div style="background:#222b12;border:1px solid #4a5e25;'
             f'border-radius:6px;padding:8px 12px;min-width:160px;flex:1;opacity:0.55">'
             f'<div style="display:flex;justify-content:space-between;align-items:baseline">'
-            f'<span style="font-weight:700;color:rgba(255,255,255,0.7);text-transform:uppercase;'
+            f'<span style="font-weight:700;color:#7b9b3c;text-transform:uppercase;'
             f'font-size:0.7rem;letter-spacing:0.04em">{g["city"]}</span>'
-            f'<span style="font-weight:800;color:rgba(255,255,255,0.7);font-size:0.8rem">£{g["min_price"]:.0f}</span>'
+            f'<span style="font-weight:800;color:#7b9b3c;font-size:0.8rem">£{g["min_price"]:.0f}</span>'
             f'</div>'
-            f'<div style="color:rgba(255,255,255,0.3);font-family:JetBrains Mono,monospace;'
+            f'<div style="color:#4a5e25;font-family:JetBrains Mono,monospace;'
             f'font-size:0.55rem;margin-top:3px;letter-spacing:0.08em;text-transform:uppercase">'
             f'{g["country"]} — {g["count"]} date{plural(g["count"])}</div>'
             f'</div>'
@@ -1092,7 +975,7 @@ if _is_searching:
         route_summary = st.empty()
         route_summary.markdown(
             f"<p style='font-family:JetBrains Mono,monospace;font-size:0.78rem;"
-            f"color:rgba(255,255,255,0.8);letter-spacing:0.06em;margin:8px 0 12px'>"
+            f"color:#7b9b3c;letter-spacing:0.06em;margin:8px 0 12px'>"
             f"SCANNING {_total_routes} ROUTES ACROSS {_n_airports} AIRPORT{'S' if _n_airports != 1 else ''}"
             f" ({_airport_list})</p>",
             unsafe_allow_html=True,
@@ -1143,7 +1026,7 @@ if _is_searching:
 
                 status_line.markdown(
                     f"<p style='font-family:JetBrains Mono,monospace;font-size:0.72rem;"
-                    f"color:rgba(255,255,255,0.6);letter-spacing:0.05em;margin:2px 0'>"
+                    f"color:#7b9b3c;letter-spacing:0.05em;margin:2px 0'>"
                     f"[{pct}%] {_friendly_msg}</p>",
                     unsafe_allow_html=True,
                 )
@@ -1153,7 +1036,7 @@ if _is_searching:
                     dests = len({d.destination_city or d.destination for d in _live_deals})
                     live_count.markdown(
                         f"<p style='font-family:JetBrains Mono,monospace;font-size:0.75rem;"
-                        f"color:#fff;letter-spacing:0.08em;margin:4px 0'>"
+                        f"color:#a4c639;letter-spacing:0.08em;margin:4px 0'>"
                         f"<b>{n}</b> DEALS ———— <b>{dests}</b> DESTINATIONS</p>",
                         unsafe_allow_html=True,
                     )
@@ -1231,15 +1114,15 @@ with tab_all:
             _n_dests = len({d.destination_city or d.destination for d in deals})
             st.markdown(
                 f"<span style='font-family:JetBrains Mono,monospace;font-size:0.75rem;"
-                f"color:rgba(255,255,255,0.6);letter-spacing:0.05em'>"
-                f"<b style='color:#fff;font-size:1.1rem'>{len(deals)}</b> DEALS "
+                f"color:#7b9b3c;letter-spacing:0.05em'>"
+                f"<b style='color:#a4c639;font-size:1.1rem'>{len(deals)}</b> DEALS "
                 f"———— {_n_dests} DESTINATIONS</span>",
                 unsafe_allow_html=True,
             )
         else:
             st.markdown(
                 "<span style='font-family:JetBrains Mono,monospace;font-size:0.75rem;"
-                "color:rgba(255,255,255,0.4)'>NO DEALS — RUN A SEARCH</span>",
+                "color:#4a5e25'>NO DEALS — RUN A SEARCH</span>",
                 unsafe_allow_html=True,
             )
 
@@ -1291,13 +1174,13 @@ with tab_all:
 
         st.markdown(
             f"<div style='margin:8px 0 4px'>"
-            f"<span style='font-size:2rem;font-weight:900;color:#fff;text-transform:uppercase;"
+            f"<span style='font-size:2rem;font-weight:900;color:#a4c639;text-transform:uppercase;"
             f"letter-spacing:-0.01em'>{selected}</span>"
-            + (f"<span style='color:rgba(255,255,255,0.5);font-family:JetBrains Mono,monospace;"
+            + (f"<span style='color:#4a5e25;font-family:JetBrains Mono,monospace;"
                f"font-size:0.8rem;margin-left:14px'>{country}</span>" if country else "")
             + f"</div>"
             f"<div style='font-family:JetBrains Mono,monospace;font-size:0.85rem;"
-            f"color:rgba(255,255,255,0.7);margin-bottom:12px'>"
+            f"color:#7b9b3c;margin-bottom:12px'>"
             f"FROM £{cheapest.price_gbp:.0f} ———— {len(dest_deals)} OPTIONS ———— {airlines_str.upper()}"
             f"</div>",
             unsafe_allow_html=True,
@@ -1309,7 +1192,7 @@ with tab_all:
         with st.popover("🌍 Where is this?", key="map_detail"):
             st.markdown(
                 f"<p style='font-family:JetBrains Mono,monospace;font-size:0.8rem;"
-                f"color:#fff;letter-spacing:0.05em;margin-bottom:8px'>"
+                f"color:#a4c639;letter-spacing:0.05em;margin-bottom:8px'>"
                 f"<b>🌍 {selected}, {country.upper()}</b></p>",
                 unsafe_allow_html=True,
             )
@@ -1323,9 +1206,9 @@ with tab_all:
             _map_url = f"https://www.google.com/maps/search/?api=1&query={_map_embed_q}"
             st.markdown(
                 f"<p style='font-family:JetBrains Mono,monospace;font-size:0.65rem;"
-                f"color:rgba(255,255,255,0.5);margin-top:8px;letter-spacing:0.05em'>"
+                f"color:#4a5e25;margin-top:8px;letter-spacing:0.05em'>"
                 f"✈ {cheapest.destination} · <a href='{_map_url}' target='_blank' "
-                f"style='color:rgba(100,180,255,0.8)'>Open in Google Maps →</a></p>",
+                f"style='color:#7b9b3c'>Open in Google Maps →</a></p>",
                 unsafe_allow_html=True,
             )
 
@@ -1339,22 +1222,22 @@ with tab_all:
             ret = _fmt_dt(deal.return_departure)
             _is_fav = deal.id in st.session_state["fav_flights"]
             _heart = "♥" if _is_fav else ""
-            _border_col = "#fff" if _is_fav else "rgba(255,255,255,0.2)"
-            _bg = "rgba(255,255,255,0.08)" if _is_fav else "transparent"
+            _border_col = "#a4c639" if _is_fav else "#4a5e25"
+            _bg = "#222b12" if _is_fav else "transparent"
 
             _deal_html = (
-                f'<div style="background:{_bg};border:2px solid {_border_col};'
+                f'<div style="background:{_bg};border:1px solid {_border_col};'
                 f'padding:10px 16px;margin-bottom:4px;display:flex;'
                 f'align-items:center;justify-content:space-between">'
                 f'<div style="font-family:JetBrains Mono,monospace;font-size:0.78rem;'
-                f'color:rgba(255,255,255,0.7)">'
-                f'<b style="color:#fff;font-size:0.95rem">£{deal.price_gbp:.0f}</b>'
+                f'color:#7b9b3c">'
+                f'<b style="color:#a4c639;font-size:0.95rem">£{deal.price_gbp:.0f}</b>'
                 f' ── {dep} → {ret}'
                 f' ── {deal.airline}'
                 f' ── {deal.nights}N'
                 f' ── {deal.origin}'
                 f'</div>'
-                f'<span style="color:#fff;font-size:1.2rem">{_heart}</span>'
+                f'<span style="color:#a4c639;font-size:1.2rem">{_heart}</span>'
                 f'</div>'
             )
             st.markdown(_deal_html, unsafe_allow_html=True)
@@ -1374,7 +1257,7 @@ with tab_all:
                 if link:
                     st.markdown(
                         f"<a href='{link}' target='_blank' style='display:block;text-align:center;"
-                        f"padding:0.45rem;border:2px solid rgba(255,255,255,0.4);color:rgba(255,255,255,0.7);"
+                        f"padding:0.45rem;border:1px solid #4a5e25;color:#7b9b3c;"
                         f"text-decoration:none;font-family:JetBrains Mono,monospace;font-size:0.72rem;"
                         f"letter-spacing:0.08em;text-transform:uppercase'>Book →</a>",
                         unsafe_allow_html=True,
@@ -1406,7 +1289,7 @@ with tab_all:
 
         st.markdown(
             f"<span style='font-family:JetBrains Mono,monospace;font-size:0.7rem;"
-            f"color:rgba(255,255,255,0.4);letter-spacing:0.1em;text-transform:uppercase'>"
+            f"color:#4a5e25;letter-spacing:0.1em;text-transform:uppercase'>"
             f"{len(groups)} destinations ———— {len(filtered)} total options</span>",
             unsafe_allow_html=True,
         )
@@ -1426,19 +1309,19 @@ with tab_all:
                     example_dep = g["example_dep"]
                     example_nights = g["example_nights"]
                     plural = "s" if count != 1 else ""
-                    _date_text = f"<b style='color:rgba(255,255,255,0.7)'>{count} date{plural}</b>"
+                    _date_text = f"<b style='color:#7b9b3c'>{count} date{plural}</b>"
 
                     # Visual card container
                     st.markdown(
-                        f"<div style='border:2px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.1);"
+                        f"<div style='border:1px solid #4a5e25;background:#1a1f0e;"
                         f"padding:12px 14px 8px;margin-bottom:2px;border-radius:4px'>"
                         f"<div style='display:flex;justify-content:space-between;align-items:baseline'>"
-                        f"<b style='color:#fff;font-size:0.95rem;letter-spacing:0.03em'>"
+                        f"<b style='color:#a4c639;font-size:0.95rem;letter-spacing:0.03em'>"
                         f"{city.upper()}</b>"
-                        f"<b style='color:#fff;font-size:1.05rem'>£{price:.0f}</b>"
+                        f"<b style='color:#a4c639;font-size:1.05rem'>£{price:.0f}</b>"
                         f"</div>"
                         f"<div style='font-family:JetBrains Mono,monospace;font-size:0.6rem;"
-                        f"color:rgba(255,255,255,0.45);letter-spacing:0.08em;margin-top:4px'>"
+                        f"color:#4a5e25;letter-spacing:0.08em;margin-top:4px'>"
                         f"{country.upper()} — {_date_text}"
                         f"</div>"
                         f"</div>",
@@ -1457,7 +1340,7 @@ with tab_all:
                         with st.popover("🌍", key=f"map_{city}", use_container_width=True):
                             st.markdown(
                                 f"<p style='font-family:JetBrains Mono,monospace;font-size:0.8rem;"
-                                f"color:#fff;letter-spacing:0.05em;margin-bottom:8px'>"
+                                f"color:#a4c639;letter-spacing:0.05em;margin-bottom:8px'>"
                                 f"<b>🌍 {city}, {country.upper()}</b></p>",
                                 unsafe_allow_html=True,
                             )
@@ -1471,9 +1354,9 @@ with tab_all:
                             _map_url = f"https://www.google.com/maps/search/?api=1&query={_map_embed_q}"
                             st.markdown(
                                 f"<p style='font-family:JetBrains Mono,monospace;font-size:0.65rem;"
-                                f"color:rgba(255,255,255,0.5);margin-top:8px;letter-spacing:0.05em'>"
+                                f"color:#4a5e25;margin-top:8px;letter-spacing:0.05em'>"
                                 f"✈ {g['dest_code']} · <a href='{_map_url}' target='_blank' "
-                                f"style='color:rgba(100,180,255,0.8)'>Open in Google Maps →</a></p>",
+                                f"style='color:#7b9b3c'>Open in Google Maps →</a></p>",
                                 unsafe_allow_html=True,
                             )
 
@@ -1488,7 +1371,7 @@ with tab_all:
     else:
         if deals:
             st.markdown(
-                "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.4);"
+                "<p style='font-family:JetBrains Mono,monospace;color:#4a5e25;"
                 "font-size:0.8rem;padding:2rem 0;letter-spacing:0.05em'>"
                 "NO DEALS MATCH CURRENT FILTER</p>",
                 unsafe_allow_html=True,
@@ -1496,18 +1379,18 @@ with tab_all:
         else:
             st.markdown(
                 "<div style='padding:3rem 0;text-align:center'>"
-                "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.6);"
+                "<p style='font-family:JetBrains Mono,monospace;color:#7b9b3c;"
                 "font-size:1rem;letter-spacing:0.05em;font-weight:700;margin-bottom:16px'>"
                 "READY TO FIND YOUR NEXT WEEKEND AWAY?</p>"
-                "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.35);"
+                "<p style='font-family:JetBrains Mono,monospace;color:#4a5e25;"
                 "font-size:0.72rem;letter-spacing:0.06em;line-height:2'>"
-                "1. Open <b style='color:rgba(255,255,255,0.5)'>[ SEARCH ]</b> above<br>"
+                "1. Open <b style='color:#7b9b3c'>[ SEARCH ]</b> above<br>"
                 "2. Pick your departure airport and travel dates<br>"
-                "3. Hit <b style='color:rgba(255,255,255,0.5)'>Search</b> — "
+                "3. Hit <b style='color:#7b9b3c'>Search</b> — "
                 "we scan Google Flights for the cheapest weekend return flights<br>"
-                "4. Browse destinations, then hit <b style='color:rgba(255,255,255,0.5)'>Book</b> "
+                "4. Browse destinations, then hit <b style='color:#7b9b3c'>Book</b> "
                 "to see exact flight times and book on Skyscanner</p>"
-                "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.25);"
+                "<p style='font-family:JetBrains Mono,monospace;color:#2e3a18;"
                 "font-size:0.62rem;letter-spacing:0.08em;margin-top:20px'>"
                 "TIP: Add Mon to your return days to catch early morning flights back for work</p>"
                 "</div>",
@@ -1523,7 +1406,7 @@ with tab_favs:
 
     if not fav_ids:
         st.markdown(
-            "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.4);"
+            "<p style='font-family:JetBrains Mono,monospace;color:#4a5e25;"
             "font-size:0.8rem;padding:2rem 0;letter-spacing:0.05em'>"
             "NO FAVOURITES YET — CLICK ♡ ON A FLIGHT TO SAVE IT HERE</p>",
             unsafe_allow_html=True,
@@ -1531,7 +1414,7 @@ with tab_favs:
     else:
         if fav_ids:
             st.markdown(
-                "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.5);"
+                "<p style='font-family:JetBrains Mono,monospace;color:#4a5e25;"
                 "font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
                 "margin-bottom:8px'>♥ Favourited Flights</p>",
                 unsafe_allow_html=True,
@@ -1547,20 +1430,20 @@ with tab_favs:
                     country = deal.destination_country or ""
 
                     st.markdown(
-                        f"""<div style="background:rgba(0,0,0,0.15);border:2px solid rgba(255,255,255,0.25);
+                        f"""<div style="background:#1a1f0e;border:1px solid #4a5e25;
                             padding:12px 16px;margin-bottom:4px">
                             <div style="display:flex;justify-content:space-between;align-items:baseline">
                                 <div style="font-family:JetBrains Mono,monospace;font-size:0.78rem;
-                                    color:rgba(255,255,255,0.7)">
-                                    <b style="color:#fff;font-size:0.95rem">£{deal.price_gbp:.0f}</b>
-                                    &nbsp;──&nbsp; <b style="color:#fff">{city.upper()}</b>
-                                    <span style="color:rgba(255,255,255,0.4);font-size:0.68rem">{country.upper()}</span>
+                                    color:#7b9b3c">
+                                    <b style="color:#a4c639;font-size:0.95rem">£{deal.price_gbp:.0f}</b>
+                                    &nbsp;──&nbsp; <b style="color:#a4c639">{city.upper()}</b>
+                                    <span style="color:#4a5e25;font-size:0.68rem">{country.upper()}</span>
                                     &nbsp;──&nbsp; {dep} → {ret}
                                     &nbsp;──&nbsp; {deal.airline}
                                     &nbsp;──&nbsp; {deal.nights}N
                                     &nbsp;──&nbsp; {deal.origin}
                                 </div>
-                                <span style="color:#fff;font-size:1rem">♥</span>
+                                <span style="color:#a4c639;font-size:1rem">♥</span>
                             </div>
                         </div>""",
                         unsafe_allow_html=True,
@@ -1577,7 +1460,7 @@ with tab_favs:
                         if link:
                             st.markdown(
                                 f"<a href='{link}' target='_blank' style='display:block;text-align:center;"
-                                f"padding:0.45rem;border:2px solid rgba(255,255,255,0.4);color:rgba(255,255,255,0.7);"
+                                f"padding:0.45rem;border:1px solid #4a5e25;color:#7b9b3c;"
                                 f"text-decoration:none;font-family:JetBrains Mono,monospace;font-size:0.72rem;"
                                 f"letter-spacing:0.08em;text-transform:uppercase'>Book →</a>",
                                 unsafe_allow_html=True,
@@ -1587,7 +1470,7 @@ with tab_favs:
                             st.code(_share_deal_text(deal), language=None)
             else:
                 st.markdown(
-                    "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.3);"
+                    "<p style='font-family:JetBrains Mono,monospace;color:#4a5e25;"
                     "font-size:0.75rem'>FAVOURITED FLIGHTS NOT IN CURRENT DATA</p>",
                     unsafe_allow_html=True,
                 )
@@ -1598,12 +1481,12 @@ st.markdown('<div class="dot-separator"></div>', unsafe_allow_html=True)
 st.markdown(
     "<div style='text-align:center;padding:16px 0 8px'>"
     "<p style='font-family:JetBrains Mono,monospace;font-size:0.62rem;"
-    "color:rgba(255,255,255,0.3);letter-spacing:0.08em;text-transform:uppercase;"
+    "color:#4a5e25;letter-spacing:0.08em;text-transform:uppercase;"
     "margin:0'>"
     "Prices are indicative returns per person ———— Source: Google Flights "
     "———— Booking links open Skyscanner</p>"
     "<p style='font-family:JetBrains Mono,monospace;font-size:0.55rem;"
-    "color:rgba(255,255,255,0.2);letter-spacing:0.06em;margin:6px 0 0'>"
+    "color:#2e3a18;letter-spacing:0.06em;margin:6px 0 0'>"
     "Prices may change between scanning and booking · Always confirm before you pay</p>"
     "</div>",
     unsafe_allow_html=True,
