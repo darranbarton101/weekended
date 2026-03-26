@@ -705,14 +705,10 @@ if _show_search:
 
     with r1c1:
         st.caption("DEPARTING FROM")
-        # Initialise widget state from saved prefs only on first run,
-        # then let the widget own its own value to avoid stale defaults
-        # overriding user selections on rerun.
+        # Airports are session-only — never restored from disk (shared server file
+        # would leak one user's airports to the next person to load the page)
         if "_ms_airports" not in st.session_state:
-            _pref_airports = _saved_prefs.get("airports", [])
-            st.session_state["_ms_airports"] = [
-                c for c in _pref_airports if c in AIRPORT_OPTIONS
-            ]
+            st.session_state["_ms_airports"] = []
         selected_airports = st.multiselect(
             "airports",
             options=list(AIRPORT_OPTIONS.keys()),
@@ -848,10 +844,10 @@ if _show_search:
     st.session_state["_last_ret_days"] = return_days
     st.session_state["_force_refresh"] = force_refresh_ui
 
-    # Persist to disk for cross-session recall
+    # Persist other prefs to disk — airports excluded (session-only to avoid
+    # leaking one user's airports to the next person who loads the page)
     _stopovers_to_label = {0: "Direct", 1: "1 stop", 2: "Any"}
     _save_search_prefs({
-        "airports": origins,
         "month_range": list(month_range),
         "max_price": max_price,
         "stops": _stopovers_to_label.get(max_stopovers, "Any"),
