@@ -642,8 +642,13 @@ with _hdr_left:
         "<div style='padding:10px 14px 8px;background:#c0c0c0'>"
         "<div style='font-family:Arial,sans-serif;font-size:2.4rem;font-weight:700;"
         "color:#000000;line-height:1;letter-spacing:-1px'>WEEKENDED</div>"
+        "<div style='font-family:Arial,sans-serif;font-size:0.82rem;font-weight:700;color:#000000;"
+        "margin-top:4px'>Find cheap weekend flights</div>"
         "<div style='font-family:Arial,sans-serif;font-size:0.72rem;color:#000000;"
-        "margin-top:2px'>Find cheap weekend flights</div>"
+        "margin-top:4px;line-height:1.5;max-width:520px'>"
+        "No destination in mind? No fixed dates? Flexible on airports? This scans Google Flights "
+        "across your nearest airports and finds the cheapest weekend returns — you just pick what looks good."
+        "</div>"
         "</div>"
         "</div>",
         unsafe_allow_html=True,
