@@ -157,6 +157,7 @@ _NAVY = "#000080"         # Title bar blue
 _BLACK = "#000000"        # Text
 _SELECTED = "#0000aa"     # Selected item highlight
 _SELECTED_TEXT = "#ffffff"
+_DESKTOP = "#008080"      # Win95 default desktop teal
 
 # Win95 3D border helpers (raised / sunken)
 _RAISED = "box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #ffffff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;"
@@ -166,9 +167,9 @@ st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
-    /* ── Base ── */
-    .stApp, .stApp > header {{
-        background-color: {_BG} !important;
+    /* ── Base — teal Win95 desktop ── */
+    .stApp, .stApp > header, [data-testid="stAppViewContainer"] {{
+        background-color: {_DESKTOP} !important;
     }}
     .stApp {{
         color: {_BLACK};
@@ -180,12 +181,19 @@ st.markdown(f"""
     [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
     section[data-testid="stSidebar"] {{ display: none !important; }}
 
-    /* Main container */
+    /* Main container — looks like an open window on the desktop */
     .main .block-container {{
-        padding-top: 0.8rem;
+        padding-top: 1rem;
         padding-left: 2rem;
         padding-right: 2rem;
         max-width: 1400px;
+        background-color: {_BG} !important;
+        border: 2px solid !important;
+        border-color: {_BG_LIGHT} #0a0a0a #0a0a0a {_BG_LIGHT} !important;
+        box-shadow: 1px 1px 0 {_BG_DARK}, -1px -1px 0 {_WHITE} !important;
+        margin-top: 1rem !important;
+        margin-bottom: 1rem !important;
+        padding-bottom: 2rem !important;
     }}
 
     /* ── Typography ── */
@@ -271,25 +279,36 @@ st.markdown(f"""
     /* ── Checkbox ── */
     .stCheckbox label span {{ color: {_BLACK} !important; }}
 
-    /* ── Pills (day picker) ── */
+    /* ── Pills (day picker) — Win95 option buttons ── */
+    [data-testid="stPills"] {{
+        gap: 3px !important;
+    }}
     [data-testid="stPills"] button {{
         background-color: {_BG} !important;
         color: {_BLACK} !important;
         border: none !important;
         border-radius: 0px !important;
         font-family: 'MS Sans Serif', Arial, sans-serif !important;
-        font-size: 0.75rem !important;
-        font-weight: 400 !important;
-        {_RAISED}
-        padding: 3px 10px !important;
+        font-size: 0.72rem !important;
+        font-weight: 700 !important;
+        box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px {_WHITE},
+                    inset -2px -2px {_BG_DARK}, inset 2px 2px {_BG_LIGHT} !important;
+        padding: 3px 8px !important;
+        min-width: 36px !important;
+        text-align: center !important;
     }}
+    /* Selected — sunken + navy fill like a pressed toolbar button */
     [data-testid="stPills"] button[aria-checked="true"],
     [data-testid="stPills"] button[data-selected="true"] {{
         background-color: {_NAVY} !important;
         color: {_WHITE} !important;
-        {_SUNKEN}
+        box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px {_WHITE},
+                    inset 2px 2px {_BG_DARK}, inset -2px -2px {_BG_LIGHT} !important;
+        /* Dashed inner focus rect — classic Win95 */
+        outline: 1px dotted {_WHITE} !important;
+        outline-offset: -4px !important;
     }}
-    [data-testid="stPills"] button:hover {{
+    [data-testid="stPills"] button:hover:not([aria-checked="true"]) {{
         background-color: {_BG_LIGHT} !important;
         color: {_BLACK} !important;
     }}
