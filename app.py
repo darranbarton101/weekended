@@ -646,14 +646,11 @@ _serp_credit_html = ""
 if _serp_key_hdr:
     _credit_data = _fetch_serpapi_credits(_serp_key_hdr)
     if _credit_data:
-        # SerpAPI returns plan_searches_left directly — prefer that over calculating
-        _remaining = _credit_data.get("plan_searches_left",
-                     _credit_data.get("searches_left", None))
-        if _remaining is None:
-            _used = _credit_data.get("this_month_searches",
-                    _credit_data.get("total_searches_used", 0))
-            _remaining = max(250 - _used, 0)
+        # Calculate from this_month_searches against known 250/month limit
+        _used = _credit_data.get("this_month_searches",
+                _credit_data.get("total_searches_used", 0))
         _limit = 250  # known monthly plan limit
+        _remaining = max(_limit - _used, 0)
         _pct = (1 - _remaining / _limit) * 100
         if _remaining <= 10:
             _credit_colour = "#ff0000"
