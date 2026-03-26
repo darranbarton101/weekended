@@ -768,82 +768,61 @@ if _show_search:
         )
         max_stopovers = {"Direct": 0, "1 stop": 1, "Any": 2}[stops_label]
 
-    # Day pickers
+    # Day pickers — compact horizontal layout
+    _day_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     r2c1, r2c2 = st.columns(2)
 
     with r2c1:
-        st.markdown('<div class="day-box">', unsafe_allow_html=True)
-        with st.container(border=True):
-            st.markdown(
-                "<p style='margin:0 0 4px;color:rgba(255,255,255,0.5);font-size:0.68rem;"
-                "font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
-                "font-family:JetBrains Mono,monospace'>Depart on</p>",
-                unsafe_allow_html=True,
-            )
-            _dep_defaults = {3: (17, 23), 4: (0, 11)}
-            _pref_dep = _saved_prefs.get("dep_days", {})
-            departure_days: dict[int, tuple[str, str]] = {}
-            for wd in range(7):
+        st.markdown(
+            "<p style='margin:0 0 2px;color:rgba(255,255,255,0.5);font-size:0.68rem;"
+            "font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
+            "font-family:JetBrains Mono,monospace'>Depart on</p>",
+            unsafe_allow_html=True,
+        )
+        _dep_defaults_set = {3, 4}  # Thu, Fri
+        _pref_dep = _saved_prefs.get("dep_days", {})
+        departure_days: dict[int, tuple[str, str]] = {}
+        _dep_cols = st.columns(7)
+        for wd in range(7):
+            with _dep_cols[wd]:
                 _wd_str = str(wd)
-                if _pref_dep and _wd_str in _pref_dep:
-                    _en_def = True
-                    _t_def = (int(_pref_dep[_wd_str][0].split(":")[0]), int(_pref_dep[_wd_str][1].split(":")[0]))
-                elif _pref_dep:
-                    _en_def = False
-                    _t_def = _dep_defaults.get(wd, (6, 22))
+                if _pref_dep:
+                    _en_def = _wd_str in _pref_dep
                 else:
-                    _en_def = wd in (3, 4)
-                    _t_def = _dep_defaults.get(wd, (6, 22))
-                _on, _times = _day_row(
-                    wd, enabled_default=_en_def,
-                    time_default=_t_def,
-                    key_prefix="dep",
-                )
-                if _on:
-                    departure_days[wd] = _times
-            if not departure_days:
-                departure_days[3] = ("17:00", "23:59")
-        st.markdown('</div>', unsafe_allow_html=True)
+                    _en_def = wd in _dep_defaults_set
+                if st.checkbox(_day_labels[wd], value=_en_def, key=f"dep_{wd}"):
+                    departure_days[wd] = ("00:00", "23:59")
+        if not departure_days:
+            departure_days[3] = ("17:00", "23:59")
 
     with r2c2:
-        st.markdown('<div class="day-box">', unsafe_allow_html=True)
-        with st.container(border=True):
-            st.markdown(
-                "<p style='margin:0 0 4px;color:rgba(255,255,255,0.5);font-size:0.68rem;"
-                "font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
-                "font-family:JetBrains Mono,monospace'>Return on</p>",
-                unsafe_allow_html=True,
-            )
-            _ret_defaults = {6: (17, 23), 0: (0, 11)}
-            _pref_ret = _saved_prefs.get("ret_days", {})
-            return_days: dict[int, tuple[str, str]] = {}
-            for wd in range(7):
+        st.markdown(
+            "<p style='margin:0 0 2px;color:rgba(255,255,255,0.5);font-size:0.68rem;"
+            "font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
+            "font-family:JetBrains Mono,monospace'>Return on</p>",
+            unsafe_allow_html=True,
+        )
+        _ret_defaults_set = {6}  # Sun
+        _pref_ret = _saved_prefs.get("ret_days", {})
+        return_days: dict[int, tuple[str, str]] = {}
+        _ret_cols = st.columns(7)
+        for wd in range(7):
+            with _ret_cols[wd]:
                 _wd_str = str(wd)
-                if _pref_ret and _wd_str in _pref_ret:
-                    _en_def = True
-                    _t_def = (int(_pref_ret[_wd_str][0].split(":")[0]), int(_pref_ret[_wd_str][1].split(":")[0]))
-                elif _pref_ret:
-                    _en_def = False
-                    _t_def = _ret_defaults.get(wd, (14, 23))
+                if _pref_ret:
+                    _en_def = _wd_str in _pref_ret
                 else:
-                    _en_def = wd == 6
-                    _t_def = _ret_defaults.get(wd, (14, 23))
-                _on, _times = _day_row(
-                    wd, enabled_default=_en_def,
-                    time_default=_t_def,
-                    key_prefix="ret",
-                )
-                if _on:
-                    return_days[wd] = _times
-            if not return_days:
-                return_days[6] = ("17:00", "23:59")
-            st.markdown(
-                "<p style='margin:6px 0 0;color:rgba(255,255,255,0.3);font-size:0.58rem;"
-                "font-family:JetBrains Mono,monospace;letter-spacing:0.06em'>"
-                "Tip: add Mon for early morning flights back for work</p>",
-                unsafe_allow_html=True,
-            )
-        st.markdown('</div>', unsafe_allow_html=True)
+                    _en_def = wd in _ret_defaults_set
+                if st.checkbox(_day_labels[wd], value=_en_def, key=f"ret_{wd}"):
+                    return_days[wd] = ("00:00", "23:59")
+        if not return_days:
+            return_days[6] = ("17:00", "23:59")
+        st.markdown(
+            "<p style='margin:2px 0 0;color:rgba(255,255,255,0.25);font-size:0.55rem;"
+            "font-family:JetBrains Mono,monospace;letter-spacing:0.06em'>"
+            "Tip: add Mon for early morning flights back for work</p>",
+            unsafe_allow_html=True,
+        )
 
     # Row 3
     r3c1, r3c2 = st.columns([3, 1.5])
