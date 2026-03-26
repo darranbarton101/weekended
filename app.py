@@ -95,7 +95,7 @@ def _detach_log_capture(handler: _LogCapture) -> None:
 
 # ── Page config ──────────────────────────────────────────────────────────────
 
-st.set_page_config(page_title="Sky Spanner", page_icon="✈", layout="wide")
+st.set_page_config(page_title="Weekended", page_icon="✈", layout="wide")
 
 # ── Favourites persistence ───────────────────────────────────────────────────
 
@@ -703,12 +703,26 @@ def _day_row(wd: int, enabled_default: bool, time_default: tuple[int, int],
 
 # ── Header ───────────────────────────────────────────────────────────────────
 
-_title_col, _home_col = st.columns([6, 1])
-with _title_col:
-    st.title("Sky Spanner")
-with _home_col:
+_hdr_left, _hdr_right = st.columns([6, 1])
+with _hdr_left:
+    # Title styled as a clickable header
+    st.markdown(
+        "<style>#weekended-home button {background:none!important;border:none!important;"
+        "color:#fff!important;font-size:2.5rem!important;font-weight:900!important;"
+        "font-family:'JetBrains Mono',monospace!important;letter-spacing:0.04em!important;"
+        "padding:0!important;cursor:pointer!important;text-transform:uppercase!important}"
+        "#weekended-home button:hover {opacity:0.7!important}"
+        "#weekended-home button p {font-size:2.5rem!important;font-weight:900!important;"
+        "color:#fff!important}</style>",
+        unsafe_allow_html=True,
+    )
+    with st.container(key="weekended-home"):
+        if st.button("Weekended", key="home_title", use_container_width=False):
+            st.session_state["selected_dest"] = None
+            st.rerun()
+with _hdr_right:
     if st.session_state.get("selected_dest"):
-        if st.button("← Home", key="home_btn"):
+        if st.button("← Back", key="home_btn"):
             st.session_state["selected_dest"] = None
             st.rerun()
 
@@ -727,7 +741,7 @@ _now_str = datetime.now().strftime("%d/%m/%y")
 st.markdown(
     f"""<div class="header-bar">
         <span>Last scan ———— {_last_scan_str if _last_scan_str else 'N/A'}</span>
-        <span>{_now_str} ———— Sky Spanner ———— V.016</span>
+        <span>{_now_str} ———— Weekended ———— V.017</span>
     </div>""",
     unsafe_allow_html=True,
 )
