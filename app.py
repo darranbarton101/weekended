@@ -727,7 +727,7 @@ _now_str = datetime.now().strftime("%d/%m/%y")
 st.markdown(
     f"""<div class="header-bar">
         <span>Last scan ———— {_last_scan_str if _last_scan_str else 'N/A'}</span>
-        <span>{_now_str} ———— Sky Spanner ———— V.015</span>
+        <span>{_now_str} ———— Sky Spanner ———— V.016</span>
     </div>""",
     unsafe_allow_html=True,
 )
@@ -1111,7 +1111,7 @@ if run_search:
     st.session_state.pop("deals", None)
     st.session_state.pop("last_log", None)
     st.session_state["selected_dest"] = None
-    st.session_state.pop("_enriched_flights", None)
+    # Clean slate for new search
     st.rerun()
 
 # Step 2: On rerun, expander is collapsed and we execute the actual scan
