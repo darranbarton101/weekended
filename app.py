@@ -705,21 +705,29 @@ def _day_row(wd: int, enabled_default: bool, time_default: tuple[int, int],
 
 _hdr_left, _hdr_right = st.columns([6, 1])
 with _hdr_left:
-    # Title styled as a clickable header
+    # Title styled as a big, bold clickable header
     st.markdown(
         "<style>#weekended-home button {background:none!important;border:none!important;"
-        "color:#fff!important;font-size:2.5rem!important;font-weight:900!important;"
-        "font-family:'JetBrains Mono',monospace!important;letter-spacing:0.04em!important;"
-        "padding:0!important;cursor:pointer!important;text-transform:uppercase!important}"
-        "#weekended-home button:hover {opacity:0.7!important}"
-        "#weekended-home button p {font-size:2.5rem!important;font-weight:900!important;"
-        "color:#fff!important}</style>",
+        "color:#fff!important;font-size:3.5rem!important;font-weight:900!important;"
+        "font-family:'JetBrains Mono',monospace!important;letter-spacing:-0.02em!important;"
+        "padding:0!important;cursor:pointer!important;text-transform:uppercase!important;"
+        "line-height:1!important;margin:0!important}"
+        "#weekended-home button:hover {opacity:0.65!important}"
+        "#weekended-home button p {font-size:3.5rem!important;font-weight:900!important;"
+        "color:#fff!important;line-height:1!important}</style>",
         unsafe_allow_html=True,
     )
     with st.container(key="weekended-home"):
-        if st.button("Weekended", key="home_title", use_container_width=False):
+        if st.button("WEEKENDED", key="home_title", use_container_width=False):
             st.session_state["selected_dest"] = None
             st.rerun()
+    # Tagline
+    st.markdown(
+        "<p style='font-family:JetBrains Mono,monospace;font-size:0.7rem;"
+        "color:rgba(255,255,255,0.4);letter-spacing:0.12em;margin:-8px 0 0;"
+        "text-transform:uppercase'>Find cheap weekend flights from Scotland</p>",
+        unsafe_allow_html=True,
+    )
 with _hdr_right:
     if st.session_state.get("selected_dest"):
         if st.button("← Back", key="home_btn"):
@@ -741,7 +749,7 @@ _now_str = datetime.now().strftime("%d/%m/%y")
 st.markdown(
     f"""<div class="header-bar">
         <span>Last scan ———— {_last_scan_str if _last_scan_str else 'N/A'}</span>
-        <span>{_now_str} ———— Weekended ———— V.017</span>
+        <span>{_now_str} ———— Weekended ———— V.018</span>
     </div>""",
     unsafe_allow_html=True,
 )
@@ -879,6 +887,12 @@ if _show_search:
                     return_days[wd] = _times
             if not return_days:
                 return_days[6] = ("17:00", "23:59")
+            st.markdown(
+                "<p style='margin:6px 0 0;color:rgba(255,255,255,0.3);font-size:0.58rem;"
+                "font-family:JetBrains Mono,monospace;letter-spacing:0.06em'>"
+                "Tip: add Mon for early morning flights back for work</p>",
+                unsafe_allow_html=True,
+            )
         st.markdown('</div>', unsafe_allow_html=True)
 
     # Row 3
@@ -1009,10 +1023,13 @@ def _share_deal_text(d) -> str:
     city = d.destination_city or d.destination
     dep = _fmt_dt(d.outbound_departure)
     ret = _fmt_dt(d.return_departure)
+    link = _fix_deep_link(d.deep_link)
     return (
-        f"{city} ({d.destination_country}) - GBP{d.price_gbp:.0f} return"
-        f" | {dep} -> {ret} | {d.airline}"
-        f" | {_fix_deep_link(d.deep_link)}"
+        f"✈ {city}, {d.destination_country}\n"
+        f"£{d.price_gbp:.0f} return · {d.airline}\n"
+        f"{dep} → {ret} · {d.nights} nights\n"
+        f"\n{link}\n"
+        f"\nFound on Weekended"
     )
 
 
@@ -1277,7 +1294,9 @@ if "selected_dest" not in st.session_state:
 
 # ── Tabs ─────────────────────────────────────────────────────────────────────
 
-tab_all, tab_favs = st.tabs(["All Destinations", "Favourites"])
+_fav_count = len(st.session_state.get("fav_flights", set()))
+_fav_label = f"Favourites ({_fav_count})" if _fav_count else "Favourites"
+tab_all, tab_favs = st.tabs(["All Destinations", _fav_label])
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ALL DESTINATIONS TAB
@@ -1555,9 +1574,20 @@ with tab_all:
             )
         else:
             st.markdown(
-                "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.4);"
-                "font-size:0.8rem;padding:2rem 0;letter-spacing:0.05em'>"
-                "NO DEALS YET — OPEN [ SEARCH ] AND RUN A SCAN</p>",
+                "<div style='padding:3rem 0;text-align:center'>"
+                "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.6);"
+                "font-size:1rem;letter-spacing:0.05em;font-weight:700;margin-bottom:12px'>"
+                "READY TO FIND YOUR NEXT WEEKEND AWAY?</p>"
+                "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.35);"
+                "font-size:0.72rem;letter-spacing:0.06em;line-height:1.8'>"
+                "1. Open <b style='color:rgba(255,255,255,0.5)'>[ SEARCH ]</b> above<br>"
+                "2. Pick your airports and travel dates<br>"
+                "3. Hit <b style='color:rgba(255,255,255,0.5)'>Search</b> — we'll scan Google Flights for the cheapest options<br>"
+                "4. Click any destination to see dates, then favourite or book</p>"
+                "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.25);"
+                "font-size:0.62rem;letter-spacing:0.08em;margin-top:16px'>"
+                "TIP: Select Sun + Mon returns to catch early Monday flights back for work</p>"
+                "</div>",
                 unsafe_allow_html=True,
             )
 
@@ -1643,10 +1673,15 @@ with tab_favs:
 
 st.markdown('<div class="dot-separator"></div>', unsafe_allow_html=True)
 st.markdown(
+    "<div style='text-align:center;padding:16px 0 8px'>"
     "<p style='font-family:JetBrains Mono,monospace;font-size:0.62rem;"
     "color:rgba(255,255,255,0.3);letter-spacing:0.08em;text-transform:uppercase;"
-    "text-align:center;padding:8px 0'>"
-    "Return prices per person (indicative) ———— Source: Google Flights via SerpAPI "
-    "———— Links open Skyscanner</p>",
+    "margin:0'>"
+    "Prices are indicative returns per person ———— Source: Google Flights "
+    "———— Booking links open Skyscanner</p>"
+    "<p style='font-family:JetBrains Mono,monospace;font-size:0.55rem;"
+    "color:rgba(255,255,255,0.2);letter-spacing:0.06em;margin:6px 0 0'>"
+    "Prices may change between scanning and booking · Always confirm before you pay</p>"
+    "</div>",
     unsafe_allow_html=True,
 )
