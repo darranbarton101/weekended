@@ -649,21 +649,21 @@ if _serp_key_hdr:
         # SerpAPI returns plan_searches_left directly — prefer that over calculating
         _remaining = _credit_data.get("plan_searches_left",
                      _credit_data.get("searches_left", None))
-        _limit = _credit_data.get("searches_per_month", 0)
         if _remaining is None:
             _used = _credit_data.get("this_month_searches",
                     _credit_data.get("total_searches_used", 0))
-            _remaining = max(_limit - _used, 0)
-        _pct = (1 - _remaining / _limit) * 100 if _limit else 0
+            _remaining = max(250 - _used, 0)
+        _limit = 250  # known monthly plan limit
+        _pct = (1 - _remaining / _limit) * 100
         if _remaining <= 10:
             _credit_colour = "#ff0000"
-            _credit_label = f"⚠ SERPAPI: {_remaining} searches left"
+            _credit_label = f"⚠ SERPAPI: {_remaining}/250 left"
         elif _pct >= 80:
             _credit_colour = "#ff8c00"
-            _credit_label = f"SERPAPI: {_remaining} searches left"
+            _credit_label = f"SERPAPI: {_remaining}/250 left"
         else:
             _credit_colour = _BLACK
-            _credit_label = f"SERPAPI: {_remaining} searches left"
+            _credit_label = f"SERPAPI: {_remaining}/250 left"
         _serp_credit_html = (
             f"<span style='color:{_credit_colour};font-weight:700'>{_credit_label}</span>"
         )
