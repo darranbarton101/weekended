@@ -658,29 +658,15 @@ def _day_row(wd: int, enabled_default: bool, time_default: tuple[int, int],
 
 _hdr_left, _hdr_right = st.columns([6, 1])
 with _hdr_left:
-    # Title styled as a massive, impactful clickable header
+    # Massive impactful logo — pure HTML, no button constraints
     st.markdown(
-        "<style>#weekended-home button {background:none!important;border:none!important;"
-        "color:#fff!important;font-size:5rem!important;font-weight:900!important;"
-        "font-family:'JetBrains Mono',monospace!important;letter-spacing:-0.03em!important;"
-        "padding:0!important;cursor:pointer!important;text-transform:uppercase!important;"
-        "line-height:0.9!important;margin:0!important;"
-        "text-shadow:0 0 40px rgba(255,255,255,0.3)!important}"
-        "#weekended-home button:hover {opacity:0.7!important;"
-        "text-shadow:0 0 60px rgba(255,255,255,0.5)!important}"
-        "#weekended-home button p {font-size:5rem!important;font-weight:900!important;"
-        "color:#fff!important;line-height:0.9!important;"
-        "text-shadow:0 0 40px rgba(255,255,255,0.3)!important}</style>",
-        unsafe_allow_html=True,
-    )
-    with st.container(key="weekended-home"):
-        if st.button("WEEKENDED", key="home_title", use_container_width=False):
-            st.session_state["selected_dest"] = None
-            st.rerun()
-    # Tagline
-    st.markdown(
-        "<p style='font-family:JetBrains Mono,monospace;font-size:0.7rem;"
-        "color:rgba(255,255,255,0.4);letter-spacing:0.12em;margin:-8px 0 0;"
+        "<h1 style='font-family:JetBrains Mono,monospace;font-size:4.5rem;font-weight:900;"
+        "color:#fff;letter-spacing:-0.03em;line-height:0.85;margin:0 0 4px;padding:0;"
+        "text-transform:uppercase;text-shadow:0 0 80px rgba(255,255,255,0.25),"
+        "0 0 120px rgba(255,255,255,0.1);-webkit-text-stroke:1px rgba(255,255,255,0.9)'>"
+        "WEEKENDED</h1>"
+        "<p style='font-family:JetBrains Mono,monospace;font-size:0.68rem;"
+        "color:rgba(255,255,255,0.4);letter-spacing:0.12em;margin:0;"
         "text-transform:uppercase'>Find cheap weekend flights</p>",
         unsafe_allow_html=True,
     )
@@ -1540,17 +1526,19 @@ with tab_all:
             st.markdown(
                 "<div style='padding:3rem 0;text-align:center'>"
                 "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.6);"
-                "font-size:1rem;letter-spacing:0.05em;font-weight:700;margin-bottom:12px'>"
+                "font-size:1rem;letter-spacing:0.05em;font-weight:700;margin-bottom:16px'>"
                 "READY TO FIND YOUR NEXT WEEKEND AWAY?</p>"
                 "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.35);"
-                "font-size:0.72rem;letter-spacing:0.06em;line-height:1.8'>"
+                "font-size:0.72rem;letter-spacing:0.06em;line-height:2'>"
                 "1. Open <b style='color:rgba(255,255,255,0.5)'>[ SEARCH ]</b> above<br>"
-                "2. Pick your airports and travel dates<br>"
-                "3. Hit <b style='color:rgba(255,255,255,0.5)'>Search</b> — we'll scan Google Flights for the cheapest options<br>"
-                "4. Click any destination to see dates, then favourite or book</p>"
+                "2. Pick your departure airport and travel dates<br>"
+                "3. Hit <b style='color:rgba(255,255,255,0.5)'>Search</b> — "
+                "we scan Google Flights for the cheapest weekend return flights<br>"
+                "4. Browse destinations, then hit <b style='color:rgba(255,255,255,0.5)'>Book</b> "
+                "to see exact flight times and book on Skyscanner</p>"
                 "<p style='font-family:JetBrains Mono,monospace;color:rgba(255,255,255,0.25);"
-                "font-size:0.62rem;letter-spacing:0.08em;margin-top:16px'>"
-                "TIP: Select Sun + Mon returns to catch early Monday flights back for work</p>"
+                "font-size:0.62rem;letter-spacing:0.08em;margin-top:20px'>"
+                "TIP: Add Mon to your return days to catch early morning flights back for work</p>"
                 "</div>",
                 unsafe_allow_html=True,
             )
