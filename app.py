@@ -657,13 +657,13 @@ if _serp_key_hdr:
         _pct = (1 - _remaining / _limit) * 100 if _limit else 0
         if _remaining <= 10:
             _credit_colour = "#ff0000"
-            _credit_label = f"⚠ SERPAPI: {_remaining} left"
+            _credit_label = f"⚠ SERPAPI: {_remaining} searches left"
         elif _pct >= 80:
             _credit_colour = "#ff8c00"
-            _credit_label = f"SERPAPI: {_remaining}/{_limit} left"
+            _credit_label = f"SERPAPI: {_remaining} searches left"
         else:
             _credit_colour = _BLACK
-            _credit_label = f"SERPAPI: {_remaining}/{_limit} left"
+            _credit_label = f"SERPAPI: {_remaining} searches left"
         _serp_credit_html = (
             f"<span style='color:{_credit_colour};font-weight:700'>{_credit_label}</span>"
         )
@@ -1331,19 +1331,23 @@ with tab_all:
             _bg = "#ffffff" if _is_fav else "transparent"
 
             _raised = "box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff"
+            _origin_name = _airport_names.get(deal.origin, deal.origin)
             _deal_html = (
                 f'<div style="background:{_bg};{_raised};'
-                f'padding:8px 14px;margin-bottom:4px;display:flex;'
-                f'align-items:center;justify-content:space-between">'
+                f'padding:8px 14px;margin-bottom:4px">'
                 f'<div style="font-family:Arial,sans-serif;font-size:0.78rem;'
-                f'color:#1a1a4a">'
-                f'<b style="color:#4a5bcc;font-size:0.95rem">£{deal.price_gbp:.0f}</b>'
+                f'color:#1a1a4a;display:flex;align-items:center;justify-content:space-between">'
+                f'<div>'
+                f'<b style="color:#4a5bcc;font-size:1rem">£{deal.price_gbp:.0f}</b>'
                 f'&nbsp;&nbsp;{dep} → {ret}'
                 f'&nbsp;&nbsp;{deal.airline}'
-                f'&nbsp;&nbsp;{deal.nights}N'
-                f'&nbsp;&nbsp;{deal.origin}'
+                f'&nbsp;&nbsp;{deal.nights} nights'
                 f'</div>'
                 f'<span style="color:#4a5bcc;font-size:1.2rem">{_heart}</span>'
+                f'</div>'
+                f'<div style="font-family:Arial,sans-serif;font-size:0.72rem;color:#9898b8;margin-top:3px">'
+                f'Flying from <b style="color:#1a1a4a">{_origin_name}</b>'
+                f'</div>'
                 f'</div>'
             )
             st.markdown(_deal_html, unsafe_allow_html=True)
@@ -1418,15 +1422,19 @@ with tab_all:
                     plural = "s" if count != 1 else ""
                     _date_text = f"<b style='color:#1a1a4a'>{count} date{plural}</b>"
 
-                    # Visual card container
+                    # Visual card container — globe link embedded in title bar
+                    _map_query = f"{city} {country}"
+                    _map_url_card = f"https://www.google.com/maps/search/?api=1&query={_map_query.replace(' ', '+')}"
                     st.markdown(
                         f"<div style='background:#ffffff;"
                         f"box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;"
                         f"padding:8px 12px;margin-bottom:2px'>"
                         f"<div style='background:linear-gradient(to right,#e09010 0%,#f5b835 100%);"
-                        f"padding:3px 8px;margin:-8px -12px 8px;'>"
+                        f"padding:3px 8px;margin:-8px -12px 8px;display:flex;justify-content:space-between;align-items:center'>"
                         f"<span style='color:#ffffff;font-family:Arial,sans-serif;font-size:0.75rem;font-weight:700'>"
                         f"{city.upper()}</span>"
+                        f"<a href='{_map_url_card}' target='_blank' title='View on map' "
+                        f"style='color:#ffffff;text-decoration:none;font-size:0.85rem;line-height:1;opacity:0.9'>🌍</a>"
                         f"</div>"
                         f"<div style='display:flex;justify-content:space-between;align-items:baseline'>"
                         f"<span style='font-family:Arial,sans-serif;font-size:0.72rem;color:#1a1a4a'>"
@@ -1441,37 +1449,10 @@ with tab_all:
                         unsafe_allow_html=True,
                     )
 
-                    # Action buttons row
-                    _bc1, _bc3 = st.columns([3, 1])
-                    with _bc1:
-                        if st.button("View deals", key=f"view_{city}", use_container_width=True):
-                            st.session_state["selected_dest"] = city
-                            st.rerun()
-                    with _bc3:
-                        _map_query = f"{city} {country}"
-                        _map_embed_q = _map_query.replace(' ', '+')
-                        with st.popover("🌍", key=f"map_{city}", use_container_width=True):
-                            st.markdown(
-                                f"<p style='font-family:Arial, sans-serif;font-size:0.8rem;"
-                                f"color:#4a5bcc;letter-spacing:0.05em;margin-bottom:8px'>"
-                                f"<b>🌍 {city}, {country.upper()}</b></p>",
-                                unsafe_allow_html=True,
-                            )
-                            st.markdown(
-                                f'<iframe width="380" height="300" style="border:0;border-radius:8px" loading="lazy" '
-                                f'referrerpolicy="no-referrer-when-downgrade" '
-                                f'src="https://maps.google.com/maps?q={_map_embed_q}&output=embed&z=6">'
-                                f'</iframe>',
-                                unsafe_allow_html=True,
-                            )
-                            _map_url = f"https://www.google.com/maps/search/?api=1&query={_map_embed_q}"
-                            st.markdown(
-                                f"<p style='font-family:Arial, sans-serif;font-size:0.65rem;"
-                                f"color:#9898b8;margin-top:8px;letter-spacing:0.05em'>"
-                                f"✈ {g['dest_code']} · <a href='{_map_url}' target='_blank' "
-                                f"style='color:#1a1a4a'>Open in Google Maps →</a></p>",
-                                unsafe_allow_html=True,
-                            )
+                    # Action button — full width now globe is inline
+                    if st.button("View deals", key=f"view_{city}", use_container_width=True):
+                        st.session_state["selected_dest"] = city
+                        st.rerun()
 
         conn = get_connection(db_path)
         mark_notified(conn, [d.id for d in filtered if not d.notified])
