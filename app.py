@@ -146,28 +146,34 @@ def _save_search_prefs(prefs: dict) -> None:
 _saved_prefs = _load_search_prefs()
 
 
-# ── CSS — Nokia 3310 LCD aesthetic ────────────────────────────────────────────
-# Dark screen, green pixel text, monospace everything, chunky and retro
+# ── CSS — Windows 95 aesthetic ───────────────────────────────────────────────
+# Classic gray, raised/sunken 3D borders, navy title bars, pixel-perfect retro
 
-_BG = "#1a1f0e"
-_BG_DARK = "#141909"
-_BG_LIGHT = "#222b12"
-_GREEN = "#7b9b3c"
-_GREEN_BRIGHT = "#a4c639"
-_GREEN_DIM = "#4a5e25"
-_GREEN_FAINT = "#2e3a18"
+_BG = "#c0c0c0"           # Classic Win95 gray
+_BG_DARK = "#808080"      # Darker gray / shadow
+_BG_LIGHT = "#dfdfdf"     # Light gray / highlight
+_WHITE = "#ffffff"        # Window white
+_NAVY = "#000080"         # Title bar blue
+_BLACK = "#000000"        # Text
+_SELECTED = "#0000aa"     # Selected item highlight
+_SELECTED_TEXT = "#ffffff"
+
+# Win95 3D border helpers (raised / sunken)
+_RAISED = "box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #ffffff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;"
+_SUNKEN = "box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px #ffffff, inset 2px 2px #808080, inset -2px -2px #dfdfdf;"
 
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
     /* ── Base ── */
     .stApp, .stApp > header {{
         background-color: {_BG} !important;
     }}
     .stApp {{
-        color: {_GREEN};
-        font-family: 'JetBrains Mono', monospace;
+        color: {_BLACK};
+        font-family: 'MS Sans Serif', 'Tahoma', Arial, sans-serif;
+        font-size: 11px;
     }}
 
     /* Hide sidebar */
@@ -184,156 +190,166 @@ st.markdown(f"""
 
     /* ── Typography ── */
     h1 {{
-        color: {_GREEN_BRIGHT} !important;
-        font-family: 'VT323', 'JetBrains Mono', monospace !important;
-        font-size: 4.5rem !important;
+        color: {_WHITE} !important;
+        font-family: 'VT323', 'MS Sans Serif', Arial, sans-serif !important;
+        font-size: 3.2rem !important;
         font-weight: 400 !important;
-        letter-spacing: 0.08em !important;
-        text-transform: uppercase;
+        letter-spacing: 0.05em !important;
         line-height: 1 !important;
         margin-bottom: 0 !important;
-        text-shadow: 0 0 20px rgba(164,198,57,0.3);
+        background: linear-gradient(to right, {_NAVY} 0%, #1084d0 100%);
+        padding: 6px 14px !important;
+        display: inline-block;
+        text-shadow: 1px 1px 0px rgba(0,0,0,0.4);
     }}
     h2 {{
-        color: {_GREEN_BRIGHT} !important;
-        font-family: 'VT323', monospace !important;
-        font-weight: 400 !important;
-        font-size: 2rem !important;
-        text-transform: uppercase;
+        color: {_WHITE} !important;
+        font-family: 'MS Sans Serif', Arial, sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 1rem !important;
+        background: linear-gradient(to right, {_NAVY} 0%, #1084d0 100%);
+        padding: 4px 10px !important;
+        margin-bottom: 4px !important;
+        letter-spacing: 0;
     }}
     h3 {{
-        color: {_GREEN} !important;
-        font-family: 'JetBrains Mono', monospace !important;
+        color: {_BLACK} !important;
+        font-family: 'MS Sans Serif', Arial, sans-serif !important;
         font-weight: 700 !important;
-        font-size: 1.1rem !important;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        font-size: 0.85rem !important;
+        letter-spacing: 0;
     }}
 
     /* Labels & text */
     label, .stCaption, [data-testid="stWidgetLabel"] p,
     [data-testid="stMarkdownContainer"] p {{
-        color: {_GREEN} !important;
-        font-family: 'JetBrains Mono', monospace !important;
-        font-size: 0.72rem !important;
+        color: {_BLACK} !important;
+        font-family: 'MS Sans Serif', 'Tahoma', Arial, sans-serif !important;
+        font-size: 0.78rem !important;
     }}
 
     /* ── Slider ── */
     [data-testid="stSlider"] [data-testid="stThumbValue"],
     [data-testid="stSlider"] [data-testid="stTickBarMin"],
     [data-testid="stSlider"] [data-testid="stTickBarMax"] {{
-        color: {_GREEN_BRIGHT} !important;
-        font-family: 'JetBrains Mono', monospace !important;
+        color: {_BLACK} !important;
+        font-family: 'MS Sans Serif', Arial, sans-serif !important;
     }}
     .stSlider > div > div > div > div {{
-        background-color: {_GREEN_BRIGHT} !important;
+        background-color: {_NAVY} !important;
     }}
     [data-testid="stSlider"] > div > div {{
-        background-color: {_GREEN_FAINT} !important;
+        background-color: {_BG_DARK} !important;
+        {_SUNKEN}
     }}
 
     /* ── Radio ── */
-    .stRadio label span {{ color: {_GREEN_DIM} !important; font-family: 'JetBrains Mono', monospace !important; font-size: 0.75rem !important; }}
-    .stRadio label[data-checked="true"] span {{ color: {_GREEN_BRIGHT} !important; font-weight: 600; }}
+    .stRadio label span {{ color: {_BLACK} !important; font-family: 'MS Sans Serif', Arial, sans-serif !important; font-size: 0.78rem !important; }}
+    .stRadio label[data-checked="true"] span {{ color: {_BLACK} !important; font-weight: 700; }}
 
     /* ── Checkbox ── */
-    .stCheckbox label span {{ color: {_GREEN} !important; }}
+    .stCheckbox label span {{ color: {_BLACK} !important; }}
 
     /* ── Pills (day picker) ── */
     [data-testid="stPills"] button {{
-        background-color: {_BG_DARK} !important;
-        color: {_GREEN_DIM} !important;
-        border: 1px solid {_GREEN_DIM} !important;
+        background-color: {_BG} !important;
+        color: {_BLACK} !important;
+        border: none !important;
         border-radius: 0px !important;
-        font-family: 'JetBrains Mono', monospace !important;
-        font-size: 0.72rem !important;
-        font-weight: 600 !important;
+        font-family: 'MS Sans Serif', Arial, sans-serif !important;
+        font-size: 0.75rem !important;
+        font-weight: 400 !important;
+        {_RAISED}
+        padding: 3px 10px !important;
     }}
     [data-testid="stPills"] button[aria-checked="true"],
     [data-testid="stPills"] button[data-selected="true"] {{
-        background-color: {_GREEN_BRIGHT} !important;
-        color: {_BG} !important;
-        border-color: {_GREEN_BRIGHT} !important;
+        background-color: {_NAVY} !important;
+        color: {_WHITE} !important;
+        {_SUNKEN}
     }}
     [data-testid="stPills"] button:hover {{
-        background-color: {_GREEN_FAINT} !important;
-        color: {_GREEN_BRIGHT} !important;
-        border-color: {_GREEN} !important;
+        background-color: {_BG_LIGHT} !important;
+        color: {_BLACK} !important;
     }}
 
     /* ── Buttons ── */
     .stButton > button[kind="primary"] {{
-        background-color: {_GREEN_BRIGHT};
-        color: {_BG};
-        border: 2px solid {_GREEN_BRIGHT};
+        background-color: {_BG};
+        color: {_BLACK};
+        border: none;
         border-radius: 0px;
         font-weight: 700;
-        font-size: 0.82rem;
-        font-family: 'JetBrains Mono', monospace;
-        padding: 0.7rem 2rem;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        transition: all 0.1s ease;
+        font-size: 0.78rem;
+        font-family: 'MS Sans Serif', Arial, sans-serif;
+        padding: 0.4rem 1.6rem;
+        letter-spacing: 0;
+        {_RAISED}
+        min-width: 80px;
     }}
     .stButton > button[kind="primary"] p {{
-        color: {_BG} !important;
+        color: {_BLACK} !important;
     }}
-    .stButton > button[kind="primary"]:hover,
-    .stButton > button[kind="primary"]:focus,
+    .stButton > button[kind="primary"]:hover {{
+        background-color: {_BG_LIGHT} !important;
+    }}
     .stButton > button[kind="primary"]:active {{
-        background-color: {_BG} !important;
-        color: {_GREEN_BRIGHT} !important;
-        border-color: {_GREEN_BRIGHT} !important;
+        {_SUNKEN}
+        padding-left: 1.7rem !important;
+        padding-top: 0.45rem !important;
     }}
     .stButton > button[kind="primary"]:hover p,
     .stButton > button[kind="primary"]:focus p,
     .stButton > button[kind="primary"]:active p {{
-        color: {_GREEN_BRIGHT} !important;
+        color: {_BLACK} !important;
     }}
     .stButton > button:not([kind="primary"]) {{
-        background-color: transparent !important;
-        color: {_GREEN} !important;
-        border: 1px solid {_GREEN_DIM} !important;
+        background-color: {_BG} !important;
+        color: {_BLACK} !important;
+        border: none !important;
         border-radius: 0px !important;
-        font-size: 0.72rem;
-        font-family: 'JetBrains Mono', monospace;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+        font-size: 0.78rem;
+        font-family: 'MS Sans Serif', Arial, sans-serif;
+        {_RAISED}
+        min-width: 60px;
     }}
     .stButton > button:not([kind="primary"]) p {{
-        color: {_GREEN} !important;
+        color: {_BLACK} !important;
     }}
-    .stButton > button:not([kind="primary"]):hover,
-    .stButton > button:not([kind="primary"]):focus {{
-        color: {_BG} !important;
-        border-color: {_GREEN_BRIGHT} !important;
-        background-color: {_GREEN_BRIGHT} !important;
+    .stButton > button:not([kind="primary"]):hover {{
+        background-color: {_BG_LIGHT} !important;
+    }}
+    .stButton > button:not([kind="primary"]):active {{
+        {_SUNKEN}
     }}
     .stButton > button:not([kind="primary"]):hover p,
     .stButton > button:not([kind="primary"]):focus p {{
-        color: {_BG} !important;
+        color: {_BLACK} !important;
     }}
 
     /* ── Selectbox / multiselect ── */
     .stSelectbox > div > div,
     .stMultiSelect > div > div {{
-        background-color: {_BG_DARK} !important;
-        border-color: {_GREEN_DIM} !important;
+        background-color: {_WHITE} !important;
+        border: 2px solid !important;
+        border-color: {_BG_DARK} {_WHITE} {_WHITE} {_BG_DARK} !important;
         border-radius: 0px !important;
-        color: {_GREEN_BRIGHT} !important;
-        font-family: 'JetBrains Mono', monospace !important;
+        color: {_BLACK} !important;
+        font-family: 'MS Sans Serif', Arial, sans-serif !important;
+        font-size: 0.78rem !important;
     }}
     .stMultiSelect span[data-baseweb="tag"] {{
-        background-color: {_GREEN_BRIGHT} !important;
-        color: {_BG} !important;
+        background-color: {_NAVY} !important;
+        color: {_WHITE} !important;
         border-radius: 0px;
-        font-weight: 600;
-        font-family: 'JetBrains Mono', monospace;
+        font-weight: 400;
+        font-family: 'MS Sans Serif', Arial, sans-serif;
+        font-size: 0.72rem;
     }}
 
     /* ── Progress bar ── */
-    .stProgress > div > div {{ background-color: {_GREEN_BRIGHT} !important; }}
-    .stProgress {{ background-color: {_GREEN_FAINT}; border-radius: 0px; }}
+    .stProgress > div > div {{ background-color: {_NAVY} !important; }}
+    .stProgress {{ background-color: {_WHITE}; border-radius: 0px; {_SUNKEN} }}
 
     /* ── Expander ── */
     [data-testid="stExpander"] {{
@@ -343,128 +359,138 @@ st.markdown(f"""
     [data-testid="stExpander"] > details {{
         border: none !important;
         border-radius: 0px !important;
-        background: transparent !important;
+        background: {_BG} !important;
+        {_RAISED}
     }}
     [data-testid="stExpander"] > details > summary {{
-        background-color: {_BG_DARK} !important;
-        color: {_GREEN} !important;
-        border: 1px solid {_GREEN_DIM} !important;
+        background: linear-gradient(to right, {_NAVY} 0%, #1084d0 100%) !important;
+        color: {_WHITE} !important;
+        border: none !important;
         border-radius: 0px !important;
-        font-family: 'JetBrains Mono', monospace !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
+        font-family: 'MS Sans Serif', Arial, sans-serif !important;
+        font-weight: 700 !important;
         font-size: 0.78rem !important;
+        padding: 4px 8px !important;
     }}
     [data-testid="stExpander"] > details > summary:hover {{
-        background-color: {_GREEN_FAINT} !important;
-        border-color: {_GREEN} !important;
-        color: {_GREEN_BRIGHT} !important;
+        background: linear-gradient(to right, #1084d0 0%, {_NAVY} 100%) !important;
+        color: {_WHITE} !important;
     }}
     [data-testid="stExpander"] > details > div {{
-        background-color: {_BG_DARK} !important;
-        border: 1px solid {_GREEN_DIM} !important;
-        border-top: none !important;
+        background-color: {_BG} !important;
+        border: none !important;
         border-radius: 0px !important;
+        padding: 8px !important;
     }}
     details > summary {{
-        background-color: {_BG_DARK} !important;
-        color: {_GREEN} !important;
-        border: 1px solid {_GREEN_DIM} !important;
+        background: linear-gradient(to right, {_NAVY} 0%, #1084d0 100%) !important;
+        color: {_WHITE} !important;
+        border: none !important;
         border-radius: 0px !important;
+        padding: 4px 8px !important;
     }}
     details > summary:hover {{
-        color: {_GREEN_BRIGHT} !important;
+        color: {_WHITE} !important;
     }}
 
     /* ── Info / alerts ── */
-    .stAlert {{ border-radius: 0px; }}
+    .stAlert {{ border-radius: 0px; {_RAISED} }}
 
     /* ── Tabs ── */
     .stTabs [data-baseweb="tab-list"] {{
-        gap: 0;
-        border-bottom: 1px solid {_GREEN_DIM};
+        gap: 4px;
+        border-bottom: 2px solid {_BG_DARK};
+        background-color: {_BG};
+        padding-top: 4px;
     }}
     .stTabs [data-baseweb="tab"] {{
-        color: {_GREEN_DIM} !important;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.72rem;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        font-weight: 600;
-        padding: 0.7rem 2rem;
-        border-bottom: 2px solid transparent;
+        color: {_BLACK} !important;
+        font-family: 'MS Sans Serif', Arial, sans-serif;
+        font-size: 0.78rem;
+        font-weight: 400;
+        padding: 4px 14px;
+        border-radius: 0;
+        background-color: {_BG};
+        {_RAISED}
+        border-bottom: none !important;
+        position: relative;
+        bottom: -2px;
     }}
     .stTabs [aria-selected="true"] {{
-        color: {_GREEN_BRIGHT} !important;
-        border-bottom: 2px solid {_GREEN_BRIGHT} !important;
-        background: transparent !important;
+        color: {_BLACK} !important;
+        background-color: {_BG} !important;
+        font-weight: 700 !important;
+        border-bottom: 2px solid {_BG} !important;
+        z-index: 1;
     }}
 
     /* ── Divider ── */
-    hr {{ border-color: {_GREEN_DIM} !important; border-style: dashed !important; }}
+    hr {{
+        border: none !important;
+        border-top: 1px solid {_BG_DARK} !important;
+        border-bottom: 1px solid {_WHITE} !important;
+    }}
 
     /* ── Caption ── */
-    .stCaption {{ color: {_GREEN_DIM} !important; font-family: 'JetBrains Mono', monospace !important; }}
+    .stCaption {{ color: {_BG_DARK} !important; font-family: 'MS Sans Serif', Arial, sans-serif !important; }}
 
     /* ── Links ── */
-    a {{ color: {_GREEN_BRIGHT} !important; }}
-    a:hover {{ color: {_GREEN} !important; }}
+    a {{ color: {_NAVY} !important; }}
+    a:hover {{ color: {_SELECTED} !important; text-decoration: underline; }}
 
-    /* ── Header bar ── */
+    /* ── Header bar / title bar ── */
     .header-bar {{
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px dashed {_GREEN_DIM};
+        padding: 4px 8px;
+        background: linear-gradient(to right, {_NAVY} 0%, #1084d0 100%);
         margin-bottom: 10px;
+        {_RAISED}
     }}
     .header-bar span {{
-        color: {_GREEN_DIM};
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.68rem;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
+        color: {_WHITE};
+        font-family: 'MS Sans Serif', Arial, sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0;
     }}
 
     /* ── Popover button ── */
     [data-testid="stPopoverButton"] > button {{
-        background-color: transparent !important;
-        color: {_GREEN} !important;
-        border: 1px solid {_GREEN_DIM} !important;
+        background-color: {_BG} !important;
+        color: {_BLACK} !important;
+        border: none !important;
         border-radius: 0px !important;
-        font-family: 'JetBrains Mono', monospace !important;
+        font-family: 'MS Sans Serif', Arial, sans-serif !important;
+        {_RAISED}
     }}
     [data-testid="stPopoverButton"] > button p {{
-        color: {_GREEN} !important;
+        color: {_BLACK} !important;
     }}
     [data-testid="stPopoverButton"] > button:hover {{
-        color: {_BG} !important;
-        border-color: {_GREEN_BRIGHT} !important;
-        background-color: {_GREEN_BRIGHT} !important;
+        background-color: {_BG_LIGHT} !important;
     }}
     [data-testid="stPopoverButton"] > button:hover p {{
-        color: {_BG} !important;
+        color: {_BLACK} !important;
     }}
 
     /* ── Secondary buttons ── */
     button[kind="secondary"] {{
-        background-color: transparent !important;
-        color: {_GREEN} !important;
-        border: 1px solid {_GREEN_DIM} !important;
+        background-color: {_BG} !important;
+        color: {_BLACK} !important;
+        border: none !important;
         border-radius: 0px !important;
+        {_RAISED}
     }}
     button[kind="secondary"] p {{
-        color: {_GREEN} !important;
+        color: {_BLACK} !important;
     }}
     button[kind="secondary"]:hover {{
-        color: {_BG} !important;
-        background-color: {_GREEN_BRIGHT} !important;
-        border-color: {_GREEN_BRIGHT} !important;
+        background-color: {_BG_LIGHT} !important;
     }}
     button[kind="secondary"]:hover p {{
-        color: {_BG} !important;
+        color: {_BLACK} !important;
     }}
 
     /* ── Scanning animation ── */
@@ -474,21 +500,24 @@ st.markdown(f"""
         66% {{ content: '...'; }}
     }}
     .scan-status {{
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.85rem;
-        color: {_GREEN_BRIGHT};
+        font-family: 'MS Sans Serif', Arial, sans-serif;
+        font-size: 0.82rem;
+        color: {_BLACK};
         font-weight: 700;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
+        background-color: {_BG};
+        border: 2px inset {_BG_DARK};
+        padding: 4px 10px;
+        display: inline-block;
     }}
     .scan-status::after {{
         content: '...';
         animation: scanning-dots 1.5s infinite;
     }}
 
-    /* Dotted grid decoration */
+    /* Win95 window-style separator */
     .dot-separator {{
-        border-top: 1px dotted {_GREEN_DIM};
+        border-top: 1px solid {_BG_DARK};
+        border-bottom: 1px solid {_WHITE};
         margin: 6px 0;
     }}
 
@@ -522,11 +551,11 @@ def _day_row(wd: int, enabled_default: bool, time_default: tuple[int, int],
         "on", value=enabled_default,
         key=f"{key_prefix}_{wd}", label_visibility="collapsed",
     )
-    _col = "#a4c639" if enabled else "#4a5e25"
+    _col = "#000080" if enabled else "#808080"
     _wt = "600" if enabled else "400"
     c2.markdown(
         f"<p style='margin:0;padding:7px 0 0;font-size:0.78rem;"
-        f"font-weight:{_wt};color:{_col};font-family:JetBrains Mono,monospace;"
+        f"font-weight:{_wt};color:{_col};font-family:Arial, sans-serif;"
         f"letter-spacing:0.08em;text-transform:uppercase'>"
         f"{DAY_NAMES[wd][:3]}</p>",
         unsafe_allow_html=True,
@@ -543,14 +572,14 @@ _hdr_left, _hdr_right = st.columns([6, 1])
 with _hdr_left:
     # Massive impactful logo — pure HTML, no button constraints
     st.markdown(
-        "<h1 style='font-family:JetBrains Mono,monospace;font-size:4.5rem;font-weight:900;"
-        "color:#a4c639;letter-spacing:-0.03em;line-height:0.85;margin:0 0 4px;padding:0;"
-        "text-transform:uppercase;text-shadow:0 0 80px rgba(164,198,57,0.25),"
-        "0 0 120px rgba(164,198,57,0.1);-webkit-text-stroke:1px #a4c639'>"
-        "WEEKENDED</h1>"
-        "<p style='font-family:JetBrains Mono,monospace;font-size:0.68rem;"
-        "color:#4a5e25;letter-spacing:0.12em;margin:0;"
-        "text-transform:uppercase'>Find cheap weekend flights</p>",
+        "<div style='background:linear-gradient(to right,#000080 0%,#1084d0 100%);"
+        "padding:6px 14px;margin-bottom:6px;display:inline-flex;align-items:center;gap:12px;"
+        "box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf'>"
+        "<span style='font-family:VT323,Arial,sans-serif;font-size:3.2rem;font-weight:400;"
+        "color:#ffffff;letter-spacing:0.04em;line-height:1'>WEEKENDED</span>"
+        "<span style='font-family:Arial,sans-serif;font-size:0.72rem;color:#c0c0c0;"
+        "font-weight:400'>Find cheap weekend flights</span>"
+        "</div>",
         unsafe_allow_html=True,
     )
 with _hdr_right:
@@ -598,7 +627,8 @@ _show_search = st.session_state["search_open"] and not _is_searching
 
 if _show_search:
     st.markdown(
-        "<div style='background:#1a1f0e;border:1px solid #4a5e25;"
+        "<div style='background:#c0c0c0;"
+        "box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf;"
         "padding:16px 20px 10px;margin-bottom:8px'>",
         unsafe_allow_html=True,
     )
@@ -693,8 +723,8 @@ if _show_search:
         if not return_days:
             return_days[6] = ("00:00", "23:59")
         st.markdown(
-            "<p style='margin:2px 0 0;color:#2e3a18;font-size:0.55rem;"
-            "font-family:JetBrains Mono,monospace;letter-spacing:0.06em'>"
+            "<p style='margin:2px 0 0;color:#808080;font-size:0.55rem;"
+            "font-family:Arial, sans-serif;letter-spacing:0.06em'>"
             "Tip: add Mon for early morning return flights</p>",
             unsafe_allow_html=True,
         )
@@ -706,9 +736,9 @@ if _show_search:
 
     with r3c1:
         _serp_status = "CONNECTED" if serpapi_key else "KEY NOT SET"
-        _status_col = "#a4c639" if serpapi_key else "#4a5e25"
+        _status_col = "#000080" if serpapi_key else "#808080"
         st.markdown(
-            f"<span style='font-family:JetBrains Mono,monospace;font-size:0.68rem;"
+            f"<span style='font-family:Arial, sans-serif;font-size:0.68rem;"
             f"color:{_status_col};letter-spacing:0.08em'>● SERPAPI {_serp_status}</span>",
             unsafe_allow_html=True,
         )
@@ -885,16 +915,20 @@ def _render_live_deals_html(deals_list) -> str:
     plural = lambda n: "s" if n != 1 else ""
     for g in sorted_g[:18]:  # Show top 18
         cards.append(
-            f'<div style="background:#222b12;border:1px solid #4a5e25;'
-            f'border-radius:6px;padding:8px 12px;min-width:160px;flex:1;opacity:0.55">'
-            f'<div style="display:flex;justify-content:space-between;align-items:baseline">'
-            f'<span style="font-weight:700;color:#7b9b3c;text-transform:uppercase;'
-            f'font-size:0.7rem;letter-spacing:0.04em">{g["city"]}</span>'
-            f'<span style="font-weight:800;color:#7b9b3c;font-size:0.8rem">£{g["min_price"]:.0f}</span>'
+            f'<div style="background:#c0c0c0;'
+            f'box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf;'
+            f'padding:6px 10px;min-width:140px;flex:1;opacity:0.75">'
+            f'<div style="background:linear-gradient(to right,#000080,#1084d0);padding:2px 6px;margin:-6px -10px 5px">'
+            f'<span style="font-weight:700;color:#ffffff;font-family:Arial,sans-serif;'
+            f'font-size:0.68rem">{g["city"].upper()}</span>'
             f'</div>'
-            f'<div style="color:#4a5e25;font-family:JetBrains Mono,monospace;'
-            f'font-size:0.55rem;margin-top:3px;letter-spacing:0.08em;text-transform:uppercase">'
-            f'{g["country"]} — {g["count"]} date{plural(g["count"])}</div>'
+            f'<div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:2px">'
+            f'<span style="color:#808080;font-family:Arial,sans-serif;font-size:0.6rem">{g["country"]}</span>'
+            f'<b style="color:#000080;font-family:Arial,sans-serif;font-size:0.85rem">£{g["min_price"]:.0f}</b>'
+            f'</div>'
+            f'<div style="color:#808080;font-family:Arial,sans-serif;'
+            f'font-size:0.58rem;margin-top:2px">'
+            f'{g["count"]} date{plural(g["count"])}</div>'
             f'</div>'
         )
 
@@ -974,8 +1008,8 @@ if _is_searching:
         # Progress section
         route_summary = st.empty()
         route_summary.markdown(
-            f"<p style='font-family:JetBrains Mono,monospace;font-size:0.78rem;"
-            f"color:#7b9b3c;letter-spacing:0.06em;margin:8px 0 12px'>"
+            f"<p style='font-family:Arial, sans-serif;font-size:0.78rem;"
+            f"color:#000000;letter-spacing:0.06em;margin:8px 0 12px'>"
             f"SCANNING {_total_routes} ROUTES ACROSS {_n_airports} AIRPORT{'S' if _n_airports != 1 else ''}"
             f" ({_airport_list})</p>",
             unsafe_allow_html=True,
@@ -1025,8 +1059,8 @@ if _is_searching:
                         break
 
                 status_line.markdown(
-                    f"<p style='font-family:JetBrains Mono,monospace;font-size:0.72rem;"
-                    f"color:#7b9b3c;letter-spacing:0.05em;margin:2px 0'>"
+                    f"<p style='font-family:Arial, sans-serif;font-size:0.72rem;"
+                    f"color:#000000;letter-spacing:0.05em;margin:2px 0'>"
                     f"[{pct}%] {_friendly_msg}</p>",
                     unsafe_allow_html=True,
                 )
@@ -1035,8 +1069,8 @@ if _is_searching:
                     n = len(_live_deals)
                     dests = len({d.destination_city or d.destination for d in _live_deals})
                     live_count.markdown(
-                        f"<p style='font-family:JetBrains Mono,monospace;font-size:0.75rem;"
-                        f"color:#a4c639;letter-spacing:0.08em;margin:4px 0'>"
+                        f"<p style='font-family:Arial, sans-serif;font-size:0.75rem;"
+                        f"color:#000080;letter-spacing:0.08em;margin:4px 0'>"
                         f"<b>{n}</b> DEALS ———— <b>{dests}</b> DESTINATIONS</p>",
                         unsafe_allow_html=True,
                     )
@@ -1113,16 +1147,16 @@ with tab_all:
         if deals:
             _n_dests = len({d.destination_city or d.destination for d in deals})
             st.markdown(
-                f"<span style='font-family:JetBrains Mono,monospace;font-size:0.75rem;"
-                f"color:#7b9b3c;letter-spacing:0.05em'>"
-                f"<b style='color:#a4c639;font-size:1.1rem'>{len(deals)}</b> DEALS "
+                f"<span style='font-family:Arial, sans-serif;font-size:0.75rem;"
+                f"color:#000000;letter-spacing:0.05em'>"
+                f"<b style='color:#000080;font-size:1.1rem'>{len(deals)}</b> DEALS "
                 f"———— {_n_dests} DESTINATIONS</span>",
                 unsafe_allow_html=True,
             )
         else:
             st.markdown(
-                "<span style='font-family:JetBrains Mono,monospace;font-size:0.75rem;"
-                "color:#4a5e25'>NO DEALS — RUN A SEARCH</span>",
+                "<span style='font-family:Arial, sans-serif;font-size:0.75rem;"
+                "color:#808080'>NO DEALS — RUN A SEARCH</span>",
                 unsafe_allow_html=True,
             )
 
@@ -1174,13 +1208,13 @@ with tab_all:
 
         st.markdown(
             f"<div style='margin:8px 0 4px'>"
-            f"<span style='font-size:2rem;font-weight:900;color:#a4c639;text-transform:uppercase;"
+            f"<span style='font-size:2rem;font-weight:900;color:#000080;text-transform:uppercase;"
             f"letter-spacing:-0.01em'>{selected}</span>"
-            + (f"<span style='color:#4a5e25;font-family:JetBrains Mono,monospace;"
+            + (f"<span style='color:#808080;font-family:Arial, sans-serif;"
                f"font-size:0.8rem;margin-left:14px'>{country}</span>" if country else "")
             + f"</div>"
-            f"<div style='font-family:JetBrains Mono,monospace;font-size:0.85rem;"
-            f"color:#7b9b3c;margin-bottom:12px'>"
+            f"<div style='font-family:Arial, sans-serif;font-size:0.85rem;"
+            f"color:#000000;margin-bottom:12px'>"
             f"FROM £{cheapest.price_gbp:.0f} ———— {len(dest_deals)} OPTIONS ———— {airlines_str.upper()}"
             f"</div>",
             unsafe_allow_html=True,
@@ -1191,8 +1225,8 @@ with tab_all:
         _map_embed_q = _map_query.replace(' ', '+')
         with st.popover("🌍 Where is this?", key="map_detail"):
             st.markdown(
-                f"<p style='font-family:JetBrains Mono,monospace;font-size:0.8rem;"
-                f"color:#a4c639;letter-spacing:0.05em;margin-bottom:8px'>"
+                f"<p style='font-family:Arial, sans-serif;font-size:0.8rem;"
+                f"color:#000080;letter-spacing:0.05em;margin-bottom:8px'>"
                 f"<b>🌍 {selected}, {country.upper()}</b></p>",
                 unsafe_allow_html=True,
             )
@@ -1205,10 +1239,10 @@ with tab_all:
             )
             _map_url = f"https://www.google.com/maps/search/?api=1&query={_map_embed_q}"
             st.markdown(
-                f"<p style='font-family:JetBrains Mono,monospace;font-size:0.65rem;"
-                f"color:#4a5e25;margin-top:8px;letter-spacing:0.05em'>"
+                f"<p style='font-family:Arial, sans-serif;font-size:0.65rem;"
+                f"color:#808080;margin-top:8px;letter-spacing:0.05em'>"
                 f"✈ {cheapest.destination} · <a href='{_map_url}' target='_blank' "
-                f"style='color:#7b9b3c'>Open in Google Maps →</a></p>",
+                f"style='color:#000000'>Open in Google Maps →</a></p>",
                 unsafe_allow_html=True,
             )
 
@@ -1222,22 +1256,23 @@ with tab_all:
             ret = _fmt_dt(deal.return_departure)
             _is_fav = deal.id in st.session_state["fav_flights"]
             _heart = "♥" if _is_fav else ""
-            _border_col = "#a4c639" if _is_fav else "#4a5e25"
-            _bg = "#222b12" if _is_fav else "transparent"
+            _border_col = "#000080" if _is_fav else "#808080"
+            _bg = "#ffffff" if _is_fav else "transparent"
 
+            _raised = "box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf"
             _deal_html = (
-                f'<div style="background:{_bg};border:1px solid {_border_col};'
-                f'padding:10px 16px;margin-bottom:4px;display:flex;'
+                f'<div style="background:{_bg};{_raised};'
+                f'padding:8px 14px;margin-bottom:4px;display:flex;'
                 f'align-items:center;justify-content:space-between">'
-                f'<div style="font-family:JetBrains Mono,monospace;font-size:0.78rem;'
-                f'color:#7b9b3c">'
-                f'<b style="color:#a4c639;font-size:0.95rem">£{deal.price_gbp:.0f}</b>'
-                f' ── {dep} → {ret}'
-                f' ── {deal.airline}'
-                f' ── {deal.nights}N'
-                f' ── {deal.origin}'
+                f'<div style="font-family:Arial,sans-serif;font-size:0.78rem;'
+                f'color:#000000">'
+                f'<b style="color:#000080;font-size:0.95rem">£{deal.price_gbp:.0f}</b>'
+                f'&nbsp;&nbsp;{dep} → {ret}'
+                f'&nbsp;&nbsp;{deal.airline}'
+                f'&nbsp;&nbsp;{deal.nights}N'
+                f'&nbsp;&nbsp;{deal.origin}'
                 f'</div>'
-                f'<span style="color:#a4c639;font-size:1.2rem">{_heart}</span>'
+                f'<span style="color:#000080;font-size:1.2rem">{_heart}</span>'
                 f'</div>'
             )
             st.markdown(_deal_html, unsafe_allow_html=True)
@@ -1257,9 +1292,10 @@ with tab_all:
                 if link:
                     st.markdown(
                         f"<a href='{link}' target='_blank' style='display:block;text-align:center;"
-                        f"padding:0.45rem;border:1px solid #4a5e25;color:#7b9b3c;"
-                        f"text-decoration:none;font-family:JetBrains Mono,monospace;font-size:0.72rem;"
-                        f"letter-spacing:0.08em;text-transform:uppercase'>Book →</a>",
+                        f"padding:0.4rem;background:#c0c0c0;color:#000000;"
+                        f"box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf;"
+                        f"text-decoration:none;font-family:Arial,sans-serif;font-size:0.75rem;"
+                        f"font-weight:700'>Book →</a>",
                         unsafe_allow_html=True,
                     )
             with fc3:
@@ -1288,8 +1324,8 @@ with tab_all:
             sorted_groups = sorted(groups.values(), key=lambda g: -g["deal_count"])
 
         st.markdown(
-            f"<span style='font-family:JetBrains Mono,monospace;font-size:0.7rem;"
-            f"color:#4a5e25;letter-spacing:0.1em;text-transform:uppercase'>"
+            f"<span style='font-family:Arial, sans-serif;font-size:0.7rem;"
+            f"color:#808080;letter-spacing:0.1em;text-transform:uppercase'>"
             f"{len(groups)} destinations ———— {len(filtered)} total options</span>",
             unsafe_allow_html=True,
         )
@@ -1309,20 +1345,26 @@ with tab_all:
                     example_dep = g["example_dep"]
                     example_nights = g["example_nights"]
                     plural = "s" if count != 1 else ""
-                    _date_text = f"<b style='color:#7b9b3c'>{count} date{plural}</b>"
+                    _date_text = f"<b style='color:#000000'>{count} date{plural}</b>"
 
                     # Visual card container
                     st.markdown(
-                        f"<div style='border:1px solid #4a5e25;background:#1a1f0e;"
-                        f"padding:12px 14px 8px;margin-bottom:2px;border-radius:4px'>"
-                        f"<div style='display:flex;justify-content:space-between;align-items:baseline'>"
-                        f"<b style='color:#a4c639;font-size:0.95rem;letter-spacing:0.03em'>"
-                        f"{city.upper()}</b>"
-                        f"<b style='color:#a4c639;font-size:1.05rem'>£{price:.0f}</b>"
+                        f"<div style='background:#ffffff;"
+                        f"box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf;"
+                        f"padding:8px 12px;margin-bottom:2px'>"
+                        f"<div style='background:linear-gradient(to right,#000080 0%,#1084d0 100%);"
+                        f"padding:3px 8px;margin:-8px -12px 8px;'>"
+                        f"<span style='color:#ffffff;font-family:Arial,sans-serif;font-size:0.75rem;font-weight:700'>"
+                        f"{city.upper()}</span>"
                         f"</div>"
-                        f"<div style='font-family:JetBrains Mono,monospace;font-size:0.6rem;"
-                        f"color:#4a5e25;letter-spacing:0.08em;margin-top:4px'>"
-                        f"{country.upper()} — {_date_text}"
+                        f"<div style='display:flex;justify-content:space-between;align-items:baseline'>"
+                        f"<span style='font-family:Arial,sans-serif;font-size:0.72rem;color:#000000'>"
+                        f"{country}</span>"
+                        f"<b style='color:#000080;font-size:1.05rem;font-family:Arial,sans-serif'>£{price:.0f}</b>"
+                        f"</div>"
+                        f"<div style='font-family:Arial,sans-serif;font-size:0.65rem;"
+                        f"color:#808080;margin-top:2px'>"
+                        f"{_date_text}"
                         f"</div>"
                         f"</div>",
                         unsafe_allow_html=True,
@@ -1339,8 +1381,8 @@ with tab_all:
                         _map_embed_q = _map_query.replace(' ', '+')
                         with st.popover("🌍", key=f"map_{city}", use_container_width=True):
                             st.markdown(
-                                f"<p style='font-family:JetBrains Mono,monospace;font-size:0.8rem;"
-                                f"color:#a4c639;letter-spacing:0.05em;margin-bottom:8px'>"
+                                f"<p style='font-family:Arial, sans-serif;font-size:0.8rem;"
+                                f"color:#000080;letter-spacing:0.05em;margin-bottom:8px'>"
                                 f"<b>🌍 {city}, {country.upper()}</b></p>",
                                 unsafe_allow_html=True,
                             )
@@ -1353,10 +1395,10 @@ with tab_all:
                             )
                             _map_url = f"https://www.google.com/maps/search/?api=1&query={_map_embed_q}"
                             st.markdown(
-                                f"<p style='font-family:JetBrains Mono,monospace;font-size:0.65rem;"
-                                f"color:#4a5e25;margin-top:8px;letter-spacing:0.05em'>"
+                                f"<p style='font-family:Arial, sans-serif;font-size:0.65rem;"
+                                f"color:#808080;margin-top:8px;letter-spacing:0.05em'>"
                                 f"✈ {g['dest_code']} · <a href='{_map_url}' target='_blank' "
-                                f"style='color:#7b9b3c'>Open in Google Maps →</a></p>",
+                                f"style='color:#000000'>Open in Google Maps →</a></p>",
                                 unsafe_allow_html=True,
                             )
 
@@ -1371,7 +1413,7 @@ with tab_all:
     else:
         if deals:
             st.markdown(
-                "<p style='font-family:JetBrains Mono,monospace;color:#4a5e25;"
+                "<p style='font-family:Arial, sans-serif;color:#808080;"
                 "font-size:0.8rem;padding:2rem 0;letter-spacing:0.05em'>"
                 "NO DEALS MATCH CURRENT FILTER</p>",
                 unsafe_allow_html=True,
@@ -1379,18 +1421,18 @@ with tab_all:
         else:
             st.markdown(
                 "<div style='padding:3rem 0;text-align:center'>"
-                "<p style='font-family:JetBrains Mono,monospace;color:#7b9b3c;"
+                "<p style='font-family:Arial, sans-serif;color:#000000;"
                 "font-size:1rem;letter-spacing:0.05em;font-weight:700;margin-bottom:16px'>"
                 "READY TO FIND YOUR NEXT WEEKEND AWAY?</p>"
-                "<p style='font-family:JetBrains Mono,monospace;color:#4a5e25;"
+                "<p style='font-family:Arial, sans-serif;color:#808080;"
                 "font-size:0.72rem;letter-spacing:0.06em;line-height:2'>"
-                "1. Open <b style='color:#7b9b3c'>[ SEARCH ]</b> above<br>"
+                "1. Open <b style='color:#000000'>[ SEARCH ]</b> above<br>"
                 "2. Pick your departure airport and travel dates<br>"
-                "3. Hit <b style='color:#7b9b3c'>Search</b> — "
+                "3. Hit <b style='color:#000000'>Search</b> — "
                 "we scan Google Flights for the cheapest weekend return flights<br>"
-                "4. Browse destinations, then hit <b style='color:#7b9b3c'>Book</b> "
+                "4. Browse destinations, then hit <b style='color:#000000'>Book</b> "
                 "to see exact flight times and book on Skyscanner</p>"
-                "<p style='font-family:JetBrains Mono,monospace;color:#2e3a18;"
+                "<p style='font-family:Arial, sans-serif;color:#808080;"
                 "font-size:0.62rem;letter-spacing:0.08em;margin-top:20px'>"
                 "TIP: Add Mon to your return days to catch early morning flights back for work</p>"
                 "</div>",
@@ -1406,7 +1448,7 @@ with tab_favs:
 
     if not fav_ids:
         st.markdown(
-            "<p style='font-family:JetBrains Mono,monospace;color:#4a5e25;"
+            "<p style='font-family:Arial, sans-serif;color:#808080;"
             "font-size:0.8rem;padding:2rem 0;letter-spacing:0.05em'>"
             "NO FAVOURITES YET — CLICK ♡ ON A FLIGHT TO SAVE IT HERE</p>",
             unsafe_allow_html=True,
@@ -1414,7 +1456,7 @@ with tab_favs:
     else:
         if fav_ids:
             st.markdown(
-                "<p style='font-family:JetBrains Mono,monospace;color:#4a5e25;"
+                "<p style='font-family:Arial, sans-serif;color:#808080;"
                 "font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
                 "margin-bottom:8px'>♥ Favourited Flights</p>",
                 unsafe_allow_html=True,
@@ -1430,20 +1472,20 @@ with tab_favs:
                     country = deal.destination_country or ""
 
                     st.markdown(
-                        f"""<div style="background:#1a1f0e;border:1px solid #4a5e25;
-                            padding:12px 16px;margin-bottom:4px">
+                        f"""<div style="background:#ffffff;box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf;
+                            padding:8px 14px;margin-bottom:4px">
                             <div style="display:flex;justify-content:space-between;align-items:baseline">
-                                <div style="font-family:JetBrains Mono,monospace;font-size:0.78rem;
-                                    color:#7b9b3c">
-                                    <b style="color:#a4c639;font-size:0.95rem">£{deal.price_gbp:.0f}</b>
-                                    &nbsp;──&nbsp; <b style="color:#a4c639">{city.upper()}</b>
-                                    <span style="color:#4a5e25;font-size:0.68rem">{country.upper()}</span>
-                                    &nbsp;──&nbsp; {dep} → {ret}
-                                    &nbsp;──&nbsp; {deal.airline}
-                                    &nbsp;──&nbsp; {deal.nights}N
-                                    &nbsp;──&nbsp; {deal.origin}
+                                <div style="font-family:Arial,sans-serif;font-size:0.78rem;
+                                    color:#000000">
+                                    <b style="color:#000080;font-size:0.95rem">£{deal.price_gbp:.0f}</b>
+                                    &nbsp;&nbsp; <b style="color:#000080">{city.upper()}</b>
+                                    <span style="color:#808080;font-size:0.68rem">&nbsp;{country.upper()}</span>
+                                    &nbsp;&nbsp;{dep} → {ret}
+                                    &nbsp;&nbsp;{deal.airline}
+                                    &nbsp;&nbsp;{deal.nights}N
+                                    &nbsp;&nbsp;{deal.origin}
                                 </div>
-                                <span style="color:#a4c639;font-size:1rem">♥</span>
+                                <span style="color:#000080;font-size:1rem">♥</span>
                             </div>
                         </div>""",
                         unsafe_allow_html=True,
@@ -1460,8 +1502,8 @@ with tab_favs:
                         if link:
                             st.markdown(
                                 f"<a href='{link}' target='_blank' style='display:block;text-align:center;"
-                                f"padding:0.45rem;border:1px solid #4a5e25;color:#7b9b3c;"
-                                f"text-decoration:none;font-family:JetBrains Mono,monospace;font-size:0.72rem;"
+                                f"padding:0.45rem;border:1px solid #808080;color:#000000;"
+                                f"text-decoration:none;font-family:Arial, sans-serif;font-size:0.72rem;"
                                 f"letter-spacing:0.08em;text-transform:uppercase'>Book →</a>",
                                 unsafe_allow_html=True,
                             )
@@ -1470,7 +1512,7 @@ with tab_favs:
                             st.code(_share_deal_text(deal), language=None)
             else:
                 st.markdown(
-                    "<p style='font-family:JetBrains Mono,monospace;color:#4a5e25;"
+                    "<p style='font-family:Arial, sans-serif;color:#808080;"
                     "font-size:0.75rem'>FAVOURITED FLIGHTS NOT IN CURRENT DATA</p>",
                     unsafe_allow_html=True,
                 )
@@ -1480,13 +1522,13 @@ with tab_favs:
 st.markdown('<div class="dot-separator"></div>', unsafe_allow_html=True)
 st.markdown(
     "<div style='text-align:center;padding:16px 0 8px'>"
-    "<p style='font-family:JetBrains Mono,monospace;font-size:0.62rem;"
-    "color:#4a5e25;letter-spacing:0.08em;text-transform:uppercase;"
+    "<p style='font-family:Arial, sans-serif;font-size:0.62rem;"
+    "color:#808080;letter-spacing:0.08em;text-transform:uppercase;"
     "margin:0'>"
     "Prices are indicative returns per person ———— Source: Google Flights "
     "———— Booking links open Skyscanner</p>"
-    "<p style='font-family:JetBrains Mono,monospace;font-size:0.55rem;"
-    "color:#2e3a18;letter-spacing:0.06em;margin:6px 0 0'>"
+    "<p style='font-family:Arial, sans-serif;font-size:0.55rem;"
+    "color:#808080;letter-spacing:0.06em;margin:6px 0 0'>"
     "Prices may change between scanning and booking · Always confirm before you pay</p>"
     "</div>",
     unsafe_allow_html=True,
