@@ -646,19 +646,24 @@ _serp_credit_html = ""
 if _serp_key_hdr:
     _credit_data = _fetch_serpapi_credits(_serp_key_hdr)
     if _credit_data:
-        _used = _credit_data.get("this_month_searches", 0)
+        # SerpAPI returns plan_searches_left directly — prefer that over calculating
+        _remaining = _credit_data.get("plan_searches_left",
+                     _credit_data.get("searches_left", None))
         _limit = _credit_data.get("searches_per_month", 0)
-        _remaining = max(_limit - _used, 0)
-        _pct = (_used / _limit * 100) if _limit else 0
+        if _remaining is None:
+            _used = _credit_data.get("this_month_searches",
+                    _credit_data.get("total_searches_used", 0))
+            _remaining = max(_limit - _used, 0)
+        _pct = (1 - _remaining / _limit) * 100 if _limit else 0
         if _remaining <= 10:
             _credit_colour = "#ff0000"
-            _credit_label = f"⚠ SERPAPI: {_remaining} LEFT"
+            _credit_label = f"⚠ SERPAPI: {_remaining} left"
         elif _pct >= 80:
             _credit_colour = "#ff8c00"
-            _credit_label = f"SERPAPI: {_remaining}/{_limit}"
+            _credit_label = f"SERPAPI: {_remaining}/{_limit} left"
         else:
             _credit_colour = _BLACK
-            _credit_label = f"SERPAPI: {_remaining}/{_limit}"
+            _credit_label = f"SERPAPI: {_remaining}/{_limit} left"
         _serp_credit_html = (
             f"<span style='color:{_credit_colour};font-weight:700'>{_credit_label}</span>"
         )
@@ -702,7 +707,7 @@ if _show_search:
     r1c1, r1c2, r1c3, r1c4 = st.columns([3, 1.5, 1.5, 1.5])
 
     with r1c1:
-        st.caption("AIRPORTS (UP TO 3)")
+        st.caption("DEPARTING FROM")
         # Initialise widget state from saved prefs only on first run,
         # then let the widget own its own value to avoid stale defaults
         # overriding user selections on rerun.
@@ -723,7 +728,7 @@ if _show_search:
         origins = selected_airports or ["GLA"]
 
     with r1c2:
-        st.caption("MONTHS OUT")
+        st.caption("HOW FAR AHEAD?")
         _pref_months = _saved_prefs.get("month_range", [1, 6])
         month_range = st.slider("Months", 1, 12, tuple(_pref_months), label_visibility="collapsed")
 
