@@ -228,19 +228,40 @@ st.markdown(f"""
         font-size: 0.78rem !important;
     }}
 
-    /* ── Slider ── */
+    /* ── Slider (Win95 trackbar) ── */
     [data-testid="stSlider"] [data-testid="stThumbValue"],
     [data-testid="stSlider"] [data-testid="stTickBarMin"],
     [data-testid="stSlider"] [data-testid="stTickBarMax"] {{
         color: {_BLACK} !important;
         font-family: 'MS Sans Serif', Arial, sans-serif !important;
+        font-size: 0.72rem !important;
     }}
-    .stSlider > div > div > div > div {{
-        background-color: {_NAVY} !important;
-    }}
-    [data-testid="stSlider"] > div > div {{
+
+    /* Sunken groove / track */
+    [data-testid="stSlider"] > div > div > div {{
+        height: 4px !important;
         background-color: {_BG_DARK} !important;
-        {_SUNKEN}
+        border: 1px solid !important;
+        border-color: #0a0a0a {_WHITE} {_WHITE} #0a0a0a !important;
+        border-radius: 0 !important;
+    }}
+
+    /* Filled portion of track */
+    [data-testid="stSlider"] > div > div > div > div:first-child {{
+        background-color: {_BG_DARK} !important;
+        border-radius: 0 !important;
+    }}
+
+    /* Thumb — rectangular Win95 style */
+    [data-testid="stSlider"] [role="slider"] {{
+        background-color: {_BG} !important;
+        border-radius: 0 !important;
+        width: 11px !important;
+        height: 22px !important;
+        border: none !important;
+        box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px {_WHITE},
+                    inset -2px -2px {_BG_DARK}, inset 2px 2px {_BG_LIGHT} !important;
+        cursor: default !important;
     }}
 
     /* ── Radio ── */
@@ -572,13 +593,39 @@ _hdr_left, _hdr_right = st.columns([6, 1])
 with _hdr_left:
     # Massive impactful logo — pure HTML, no button constraints
     st.markdown(
+        # Outer window frame — raised border
+        "<div style='display:inline-block;margin-bottom:10px;"
+        "border:2px solid;border-color:#dfdfdf #0a0a0a #0a0a0a #dfdfdf;"
+        "box-shadow:1px 1px 0 #808080;background:#c0c0c0;padding:3px'>"
+        # Title bar
         "<div style='background:linear-gradient(to right,#000080 0%,#1084d0 100%);"
-        "padding:6px 14px;margin-bottom:6px;display:inline-flex;align-items:center;gap:12px;"
-        "box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf'>"
-        "<span style='font-family:VT323,Arial,sans-serif;font-size:3.2rem;font-weight:400;"
-        "color:#ffffff;letter-spacing:0.04em;line-height:1'>WEEKENDED</span>"
-        "<span style='font-family:Arial,sans-serif;font-size:0.72rem;color:#c0c0c0;"
-        "font-weight:400'>Find cheap weekend flights</span>"
+        "padding:3px 4px;display:flex;align-items:center;justify-content:space-between'>"
+        # Icon + title
+        "<div style='display:flex;align-items:center;gap:5px'>"
+        "<span style='font-size:13px;line-height:1'>✈</span>"
+        "<span style='font-family:Arial,sans-serif;font-size:11px;font-weight:700;color:#ffffff'>"
+        "Weekended</span>"
+        "</div>"
+        # Window control buttons
+        "<div style='display:flex;gap:2px'>"
+        "<span style='display:inline-flex;align-items:center;justify-content:center;"
+        "width:16px;height:14px;background:#c0c0c0;font-size:9px;font-weight:700;color:#000;"
+        "border:1px solid;border-color:#dfdfdf #0a0a0a #0a0a0a #dfdfdf;cursor:default'>─</span>"
+        "<span style='display:inline-flex;align-items:center;justify-content:center;"
+        "width:16px;height:14px;background:#c0c0c0;font-size:9px;font-weight:700;color:#000;"
+        "border:1px solid;border-color:#dfdfdf #0a0a0a #0a0a0a #dfdfdf;cursor:default'>□</span>"
+        "<span style='display:inline-flex;align-items:center;justify-content:center;"
+        "width:16px;height:14px;background:#c0c0c0;font-size:9px;font-weight:700;color:#000;"
+        "border:1px solid;border-color:#dfdfdf #0a0a0a #0a0a0a #dfdfdf;cursor:default'>✕</span>"
+        "</div>"
+        "</div>"
+        # Window body
+        "<div style='padding:10px 14px 8px;background:#c0c0c0'>"
+        "<div style='font-family:Arial,sans-serif;font-size:2.4rem;font-weight:700;"
+        "color:#000000;line-height:1;letter-spacing:-1px'>WEEKENDED</div>"
+        "<div style='font-family:Arial,sans-serif;font-size:0.72rem;color:#000000;"
+        "margin-top:2px'>Find cheap weekend flights</div>"
+        "</div>"
         "</div>",
         unsafe_allow_html=True,
     )
