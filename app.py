@@ -680,7 +680,7 @@ st.markdown(
 
 # Manual toggle — not st.expander, so we can force-close it
 if "search_open" not in st.session_state:
-    st.session_state["search_open"] = False
+    st.session_state["search_open"] = True
 _is_searching = st.session_state.get("_run_search", False)
 
 # Toggle button
@@ -709,11 +709,10 @@ if _show_search:
         # then let the widget own its own value to avoid stale defaults
         # overriding user selections on rerun.
         if "_ms_airports" not in st.session_state:
-            _pref_airports = _saved_prefs.get("airports", ["GLA", "EDI"])
-            # Filter out any codes that no longer exist in the options list
+            _pref_airports = _saved_prefs.get("airports", [])
             st.session_state["_ms_airports"] = [
                 c for c in _pref_airports if c in AIRPORT_OPTIONS
-            ] or ["GLA", "EDI"]
+            ]
         selected_airports = st.multiselect(
             "airports",
             options=list(AIRPORT_OPTIONS.keys()),
@@ -725,7 +724,7 @@ if _show_search:
         origins = selected_airports or ["GLA"]
 
     with r1c2:
-        st.caption("HOW FAR AHEAD?")
+        st.caption("HOW FAR AHEAD? (months)")
         _pref_months = _saved_prefs.get("month_range", [1, 6])
         month_range = st.slider("Months", 1, 12, tuple(_pref_months), label_visibility="collapsed")
 
