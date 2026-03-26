@@ -284,56 +284,6 @@ st.markdown(f"""
     /* ── Checkbox ── */
     .stCheckbox label span {{ color: {_BLACK} !important; }}
 
-    /* ── Pills (day picker) ── */
-    [data-testid="stPills"] {{
-        gap: 3px !important;
-    }}
-    /* Unselected — white raised button */
-    [data-testid="stPills"] button,
-    [data-testid="stPills"] button:not([aria-checked="true"]),
-    [data-testid="stPills"] button:not([data-selected="true"]) {{
-        background-color: {_BG} !important;
-        background: {_BG} !important;
-        color: {_BLACK} !important;
-        border: none !important;
-        border-radius: 0px !important;
-        font-family: 'MS Sans Serif', Arial, sans-serif !important;
-        font-size: 0.72rem !important;
-        font-weight: 700 !important;
-        box-shadow: inset -1px -1px {_BORDER}, inset 1px 1px {_BG_LIGHT},
-                    inset -2px -2px {_BG_DARK}, inset 2px 2px {_WHITE} !important;
-        padding: 3px 8px !important;
-        min-width: 36px !important;
-        text-align: center !important;
-    }}
-    /* Text inside unselected pill */
-    [data-testid="stPills"] button p,
-    [data-testid="stPills"] button span {{
-        color: {_BLACK} !important;
-    }}
-    /* Selected — navy sunken */
-    [data-testid="stPills"] button[aria-checked="true"],
-    [data-testid="stPills"] button[data-selected="true"] {{
-        background-color: {_NAVY} !important;
-        background: {_NAVY} !important;
-        color: {_WHITE} !important;
-        box-shadow: inset 1px 1px {_BORDER}, inset -1px -1px {_BG_LIGHT},
-                    inset 2px 2px {_BG_DARK}, inset -2px -2px {_WHITE} !important;
-        outline: 1px dotted {_WHITE} !important;
-        outline-offset: -4px !important;
-    }}
-    /* Text inside selected pill */
-    [data-testid="stPills"] button[aria-checked="true"] p,
-    [data-testid="stPills"] button[aria-checked="true"] span,
-    [data-testid="stPills"] button[data-selected="true"] p,
-    [data-testid="stPills"] button[data-selected="true"] span {{
-        color: {_WHITE} !important;
-    }}
-    [data-testid="stPills"] button:hover:not([aria-checked="true"]) {{
-        background-color: {_BG_LIGHT} !important;
-        background: {_BG_LIGHT} !important;
-        color: {_BLACK} !important;
-    }}
 
     /* ── Buttons ── */
     .stButton > button[kind="primary"] {{
@@ -763,7 +713,7 @@ if _show_search:
         )
         max_stopovers = {"Direct": 0, "1 stop": 1, "Any": 2}[stops_label]
 
-    # Day pickers — pill buttons
+    # Day pickers — multiselect (reliable cross-platform styling)
     _day_options = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     _day_to_idx = {name: i for i, name in enumerate(_day_options)}
 
@@ -775,9 +725,8 @@ if _show_search:
             _dep_default = [_day_options[int(k)] for k in _pref_dep.keys() if int(k) < 7]
         else:
             _dep_default = ["Thu", "Fri"]
-        _dep_selected = st.pills(
+        _dep_selected = st.multiselect(
             "Depart on", _day_options,
-            selection_mode="multi",
             default=_dep_default,
             key="dep_pills",
         )
@@ -793,9 +742,8 @@ if _show_search:
             _ret_default = [_day_options[int(k)] for k in _pref_ret.keys() if int(k) < 7]
         else:
             _ret_default = ["Sun"]
-        _ret_selected = st.pills(
+        _ret_selected = st.multiselect(
             "Return on", _day_options,
-            selection_mode="multi",
             default=_ret_default,
             key="ret_pills",
         )
@@ -804,12 +752,7 @@ if _show_search:
             return_days[_day_to_idx[name]] = ("00:00", "23:59")
         if not return_days:
             return_days[6] = ("00:00", "23:59")
-        st.markdown(
-            "<p style='margin:2px 0 0;color:#9898b8;font-size:0.55rem;"
-            "font-family:Arial, sans-serif;letter-spacing:0.06em'>"
-            "Tip: add Mon for early morning return flights</p>",
-            unsafe_allow_html=True,
-        )
+        st.caption("Tip: add Mon to catch early morning return flights")
 
     # Row 3
     r3c1, r3c2 = st.columns([3, 1.5])
