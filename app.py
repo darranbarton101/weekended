@@ -33,6 +33,42 @@ from travel_scanner.models import DAY_NAMES, DAY_SHORT, ScanParams
 from travel_scanner.scanner import load_config, run_scan_streaming
 
 
+# ── Currency support ──────────────────────────────────────────────────────────
+_CURRENCY_SYMBOLS: dict[str, str] = {
+    "GBP": "£", "EUR": "€", "USD": "$", "AUD": "A$",
+    "CAD": "C$", "CHF": "Fr", "NZD": "NZ$", "DKK": "kr",
+    "NOK": "kr", "SEK": "kr", "PLN": "zł", "JPY": "¥",
+}
+
+
+@st.cache_data(ttl=3600)
+def _fetch_exchange_rates() -> dict[str, float]:
+    """GBP → other rates via Frankfurter (free, ECB, no API key)."""
+    import requests as _req
+    try:
+        _r = _req.get(
+            "https://api.frankfurter.app/latest",
+            params={"from": "GBP", "to": "EUR,USD,AUD,CAD,CHF,NZD,DKK,NOK,SEK,PLN,JPY"},
+            timeout=5,
+        )
+        if _r.status_code == 200:
+            _d = _r.json().get("rates", {})
+            _d["GBP"] = 1.0
+            return _d
+    except Exception:
+        pass
+    return {"GBP": 1.0}
+
+
+def _fmt(price_gbp: float, currency: str = "GBP", rates: dict | None = None) -> str:
+    """Format a GBP price in the chosen display currency."""
+    _r = rates or {"GBP": 1.0}
+    _converted = price_gbp * _r.get(currency, 1.0)
+    _sym = _CURRENCY_SYMBOLS.get(currency, currency + "\u00a0")
+    return f"{_sym}{_converted:.0f}"
+
+
+# ── Scan phrases ───────────────────────────────────────────────────────────────
 _SCAN_PHRASES = [
     "Checking the departure boards",
     "Negotiating with airlines",
@@ -1165,8 +1201,10 @@ tab_all, tab_favs = st.tabs(["All Destinations", _fav_label])
 # ALL DESTINATIONS TAB
 # ══════════════════════════════════════════════════════════════════════════════
 
+_rates = _fetch_exchange_rates()
+
 with tab_all:
-    tc1, tc2 = st.columns([4, 1.5])
+    tc1, tc2, tc3 = st.columns([4, 1.2, 1])
 
     with tc1:
         if deals:
@@ -1190,6 +1228,14 @@ with tab_all:
             "Sort by", ["Price", "Destination", "Dates available"],
             label_visibility="collapsed",
         )
+
+    with tc3:
+        st.selectbox(
+            "Currency", list(_CURRENCY_SYMBOLS.keys()),
+            index=0, label_visibility="collapsed", key="_currency",
+        )
+
+    _cur = st.session_state.get("_currency", "GBP")
 
     filtered = deals[:]
 
@@ -1240,7 +1286,7 @@ with tab_all:
             + f"</div>"
             f"<div style='font-family:Arial, sans-serif;font-size:0.85rem;"
             f"color:#1a1a4a;margin-bottom:12px'>"
-            f"FROM £{cheapest.price_gbp:.0f} ———— {len(dest_deals)} OPTIONS ———— {airlines_str.upper()}"
+            f"FROM {_fmt(cheapest.price_gbp, _cur, _rates)} ———— {len(dest_deals)} OPTIONS ———— {airlines_str.upper()}"
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -1292,7 +1338,7 @@ with tab_all:
                 f'<div style="font-family:Arial,sans-serif;font-size:0.78rem;'
                 f'color:#1a1a4a;display:flex;align-items:center;justify-content:space-between">'
                 f'<div>'
-                f'<b style="color:#4a5bcc;font-size:1rem">£{deal.price_gbp:.0f}</b>'
+                f'<b style="color:#4a5bcc;font-size:1rem">{_fmt(deal.price_gbp, _cur, _rates)}</b>'
                 f'&nbsp;&nbsp;{dep} → {ret}'
                 f'&nbsp;&nbsp;{deal.airline}'
                 f'&nbsp;&nbsp;{deal.nights} nights'
@@ -1393,7 +1439,7 @@ with tab_all:
                         f"<div style='display:flex;justify-content:space-between;align-items:baseline'>"
                         f"<span style='font-family:Arial,sans-serif;font-size:0.72rem;color:#1a1a4a'>"
                         f"{country}</span>"
-                        f"<b style='color:#4a5bcc;font-size:1.05rem;font-family:Arial,sans-serif'>£{price:.0f}</b>"
+                        f"<b style='color:#4a5bcc;font-size:1.05rem;font-family:Arial,sans-serif'>{_fmt(price, _cur, _rates)}</b>"
                         f"</div>"
                         f"<div style='font-family:Arial,sans-serif;font-size:0.65rem;"
                         f"color:#9898b8;margin-top:2px'>"
@@ -1450,6 +1496,7 @@ with tab_all:
 # ══════════════════════════════════════════════════════════════════════════════
 
 with tab_favs:
+    _cur = st.session_state.get("_currency", "GBP")
     fav_ids = st.session_state.get("fav_flights", set())
 
     if not fav_ids:
@@ -1483,7 +1530,7 @@ with tab_favs:
                             <div style="display:flex;justify-content:space-between;align-items:baseline">
                                 <div style="font-family:Arial,sans-serif;font-size:0.78rem;
                                     color:#1a1a4a">
-                                    <b style="color:#4a5bcc;font-size:0.95rem">£{deal.price_gbp:.0f}</b>
+                                    <b style="color:#4a5bcc;font-size:0.95rem">{_fmt(deal.price_gbp, _cur, _rates)}</b>
                                     &nbsp;&nbsp; <b style="color:#4a5bcc">{city.upper()}</b>
                                     <span style="color:#9898b8;font-size:0.68rem">&nbsp;{country.upper()}</span>
                                     &nbsp;&nbsp;{dep} → {ret}
