@@ -705,16 +705,19 @@ def _day_row(wd: int, enabled_default: bool, time_default: tuple[int, int],
 
 _hdr_left, _hdr_right = st.columns([6, 1])
 with _hdr_left:
-    # Title styled as a big, bold clickable header
+    # Title styled as a massive, impactful clickable header
     st.markdown(
         "<style>#weekended-home button {background:none!important;border:none!important;"
-        "color:#fff!important;font-size:3.5rem!important;font-weight:900!important;"
-        "font-family:'JetBrains Mono',monospace!important;letter-spacing:-0.02em!important;"
+        "color:#fff!important;font-size:5rem!important;font-weight:900!important;"
+        "font-family:'JetBrains Mono',monospace!important;letter-spacing:-0.03em!important;"
         "padding:0!important;cursor:pointer!important;text-transform:uppercase!important;"
-        "line-height:1!important;margin:0!important}"
-        "#weekended-home button:hover {opacity:0.65!important}"
-        "#weekended-home button p {font-size:3.5rem!important;font-weight:900!important;"
-        "color:#fff!important;line-height:1!important}</style>",
+        "line-height:0.9!important;margin:0!important;"
+        "text-shadow:0 0 40px rgba(255,255,255,0.3)!important}"
+        "#weekended-home button:hover {opacity:0.7!important;"
+        "text-shadow:0 0 60px rgba(255,255,255,0.5)!important}"
+        "#weekended-home button p {font-size:5rem!important;font-weight:900!important;"
+        "color:#fff!important;line-height:0.9!important;"
+        "text-shadow:0 0 40px rgba(255,255,255,0.3)!important}</style>",
         unsafe_allow_html=True,
     )
     with st.container(key="weekended-home"):
