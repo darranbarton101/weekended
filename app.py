@@ -146,30 +146,37 @@ def _save_search_prefs(prefs: dict) -> None:
 _saved_prefs = _load_search_prefs()
 
 
-# ── CSS — Windows 95 aesthetic ───────────────────────────────────────────────
-# Classic gray, raised/sunken 3D borders, navy title bars, pixel-perfect retro
+# ── CSS — Y2K / vaporwave Windows aesthetic ──────────────────────────────────
+# Pink grid desktop, amber title bars, white windows, soft navy borders
 
-_BG = "#c0c0c0"           # Classic Win95 gray
-_BG_DARK = "#808080"      # Darker gray / shadow
-_BG_LIGHT = "#dfdfdf"     # Light gray / highlight
-_WHITE = "#ffffff"        # Window white
-_NAVY = "#000080"         # Title bar blue
-_BLACK = "#000000"        # Text
-_SELECTED = "#0000aa"     # Selected item highlight
-_SELECTED_TEXT = "#ffffff"
-_DESKTOP = "#008080"      # Win95 default desktop teal
+_BG = "#ffffff"           # Window white
+_BG_DARK = "#9898b8"      # Purple-tinted shadow
+_BG_LIGHT = "#faf0ff"     # Very light lavender highlight
+_WHITE = "#ffffff"        # Pure white
+_TITLE = "#f5a623"        # Amber title bar
+_TITLE_DARK = "#d48a0a"   # Darker amber
+_NAVY = "#4a5bcc"         # Blue-purple (highlights, prices, selections)
+_BORDER = "#2a2a6e"       # Dark indigo border
+_BLACK = "#1a1a4a"        # Dark navy text
+_SELECTED = "#6b7fd7"     # Lavender selected
+_DESKTOP = "#f2c4dc"      # Pink desktop
 
-# Win95 3D border helpers (raised / sunken)
-_RAISED = "box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #ffffff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;"
-_SUNKEN = "box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px #ffffff, inset 2px 2px #808080, inset -2px -2px #dfdfdf;"
+# Y2K 3D border helpers (raised / sunken)
+_RAISED = "box-shadow: inset -1px -1px #2a2a6e, inset 1px 1px #faf0ff, inset -2px -2px #9898b8, inset 2px 2px #ffffff;"
+_SUNKEN = "box-shadow: inset 1px 1px #2a2a6e, inset -1px -1px #faf0ff, inset 2px 2px #9898b8, inset -2px -2px #ffffff;"
+_TITLE_GRAD = "linear-gradient(to right, #e09010 0%, #f5b835 100%)"
 
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
-    /* ── Base — teal Win95 desktop ── */
+    /* ── Base — pink grid desktop ── */
     .stApp, .stApp > header, [data-testid="stAppViewContainer"] {{
         background-color: {_DESKTOP} !important;
+        background-image:
+            linear-gradient(rgba(160,100,200,0.18) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(160,100,200,0.18) 1px, transparent 1px) !important;
+        background-size: 24px 24px !important;
     }}
     .stApp {{
         color: {_BLACK};
@@ -181,7 +188,7 @@ st.markdown(f"""
     [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
     section[data-testid="stSidebar"] {{ display: none !important; }}
 
-    /* Main container — looks like an open window on the desktop */
+    /* Main container — floating window on the pink desktop */
     .main .block-container {{
         padding-top: 1rem;
         padding-left: 2rem;
@@ -189,8 +196,8 @@ st.markdown(f"""
         max-width: 1400px;
         background-color: {_BG} !important;
         border: 2px solid !important;
-        border-color: {_BG_LIGHT} #0a0a0a #0a0a0a {_BG_LIGHT} !important;
-        box-shadow: 1px 1px 0 {_BG_DARK}, -1px -1px 0 {_WHITE} !important;
+        border-color: {_BG_LIGHT} {_BORDER} {_BORDER} {_BG_LIGHT} !important;
+        box-shadow: 2px 2px 0 {_BG_DARK} !important;
         margin-top: 1rem !important;
         margin-bottom: 1rem !important;
         padding-bottom: 2rem !important;
@@ -198,24 +205,22 @@ st.markdown(f"""
 
     /* ── Typography ── */
     h1 {{
-        color: {_WHITE} !important;
+        color: {_BLACK} !important;
         font-family: 'VT323', 'MS Sans Serif', Arial, sans-serif !important;
         font-size: 3.2rem !important;
         font-weight: 400 !important;
         letter-spacing: 0.05em !important;
         line-height: 1 !important;
         margin-bottom: 0 !important;
-        background: linear-gradient(to right, {_NAVY} 0%, #1084d0 100%);
         padding: 6px 14px !important;
         display: inline-block;
-        text-shadow: 1px 1px 0px rgba(0,0,0,0.4);
     }}
     h2 {{
-        color: {_WHITE} !important;
+        color: {_BLACK} !important;
         font-family: 'MS Sans Serif', Arial, sans-serif !important;
         font-weight: 700 !important;
         font-size: 1rem !important;
-        background: linear-gradient(to right, {_NAVY} 0%, #1084d0 100%);
+        background: {_TITLE_GRAD};
         padding: 4px 10px !important;
         margin-bottom: 4px !important;
         letter-spacing: 0;
@@ -236,7 +241,7 @@ st.markdown(f"""
         font-size: 0.78rem !important;
     }}
 
-    /* ── Slider (Win95 trackbar) ── */
+    /* ── Slider (trackbar) ── */
     [data-testid="stSlider"] [data-testid="stThumbValue"],
     [data-testid="stSlider"] [data-testid="stTickBarMin"],
     [data-testid="stSlider"] [data-testid="stTickBarMax"] {{
@@ -245,41 +250,41 @@ st.markdown(f"""
         font-size: 0.72rem !important;
     }}
 
-    /* Sunken groove / track */
+    /* Sunken groove */
     [data-testid="stSlider"] > div > div > div {{
         height: 4px !important;
         background-color: {_BG_DARK} !important;
         border: 1px solid !important;
-        border-color: #0a0a0a {_WHITE} {_WHITE} #0a0a0a !important;
+        border-color: {_BORDER} {_BG_LIGHT} {_BG_LIGHT} {_BORDER} !important;
         border-radius: 0 !important;
     }}
 
-    /* Filled portion of track */
+    /* Filled portion */
     [data-testid="stSlider"] > div > div > div > div:first-child {{
-        background-color: {_BG_DARK} !important;
+        background-color: {_NAVY} !important;
         border-radius: 0 !important;
     }}
 
-    /* Thumb — rectangular Win95 style */
+    /* Rectangular thumb */
     [data-testid="stSlider"] [role="slider"] {{
         background-color: {_BG} !important;
         border-radius: 0 !important;
         width: 11px !important;
         height: 22px !important;
         border: none !important;
-        box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px {_WHITE},
-                    inset -2px -2px {_BG_DARK}, inset 2px 2px {_BG_LIGHT} !important;
+        box-shadow: inset -1px -1px {_BORDER}, inset 1px 1px {_BG_LIGHT},
+                    inset -2px -2px {_BG_DARK}, inset 2px 2px {_WHITE} !important;
         cursor: default !important;
     }}
 
     /* ── Radio ── */
     .stRadio label span {{ color: {_BLACK} !important; font-family: 'MS Sans Serif', Arial, sans-serif !important; font-size: 0.78rem !important; }}
-    .stRadio label[data-checked="true"] span {{ color: {_BLACK} !important; font-weight: 700; }}
+    .stRadio label[data-checked="true"] span {{ color: {_NAVY} !important; font-weight: 700; }}
 
     /* ── Checkbox ── */
     .stCheckbox label span {{ color: {_BLACK} !important; }}
 
-    /* ── Pills (day picker) — Win95 option buttons ── */
+    /* ── Pills (day picker) ── */
     [data-testid="stPills"] {{
         gap: 3px !important;
     }}
@@ -291,20 +296,18 @@ st.markdown(f"""
         font-family: 'MS Sans Serif', Arial, sans-serif !important;
         font-size: 0.72rem !important;
         font-weight: 700 !important;
-        box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px {_WHITE},
-                    inset -2px -2px {_BG_DARK}, inset 2px 2px {_BG_LIGHT} !important;
+        box-shadow: inset -1px -1px {_BORDER}, inset 1px 1px {_BG_LIGHT},
+                    inset -2px -2px {_BG_DARK}, inset 2px 2px {_WHITE} !important;
         padding: 3px 8px !important;
         min-width: 36px !important;
         text-align: center !important;
     }}
-    /* Selected — sunken + navy fill like a pressed toolbar button */
     [data-testid="stPills"] button[aria-checked="true"],
     [data-testid="stPills"] button[data-selected="true"] {{
         background-color: {_NAVY} !important;
         color: {_WHITE} !important;
-        box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px {_WHITE},
-                    inset 2px 2px {_BG_DARK}, inset -2px -2px {_BG_LIGHT} !important;
-        /* Dashed inner focus rect — classic Win95 */
+        box-shadow: inset 1px 1px {_BORDER}, inset -1px -1px {_BG_LIGHT},
+                    inset 2px 2px {_BG_DARK}, inset -2px -2px {_WHITE} !important;
         outline: 1px dotted {_WHITE} !important;
         outline-offset: -4px !important;
     }}
@@ -327,12 +330,8 @@ st.markdown(f"""
         {_RAISED}
         min-width: 80px;
     }}
-    .stButton > button[kind="primary"] p {{
-        color: {_BLACK} !important;
-    }}
-    .stButton > button[kind="primary"]:hover {{
-        background-color: {_BG_LIGHT} !important;
-    }}
+    .stButton > button[kind="primary"] p {{ color: {_BLACK} !important; }}
+    .stButton > button[kind="primary"]:hover {{ background-color: {_BG_LIGHT} !important; }}
     .stButton > button[kind="primary"]:active {{
         {_SUNKEN}
         padding-left: 1.7rem !important;
@@ -340,9 +339,7 @@ st.markdown(f"""
     }}
     .stButton > button[kind="primary"]:hover p,
     .stButton > button[kind="primary"]:focus p,
-    .stButton > button[kind="primary"]:active p {{
-        color: {_BLACK} !important;
-    }}
+    .stButton > button[kind="primary"]:active p {{ color: {_BLACK} !important; }}
     .stButton > button:not([kind="primary"]) {{
         background-color: {_BG} !important;
         color: {_BLACK} !important;
@@ -353,19 +350,11 @@ st.markdown(f"""
         {_RAISED}
         min-width: 60px;
     }}
-    .stButton > button:not([kind="primary"]) p {{
-        color: {_BLACK} !important;
-    }}
-    .stButton > button:not([kind="primary"]):hover {{
-        background-color: {_BG_LIGHT} !important;
-    }}
-    .stButton > button:not([kind="primary"]):active {{
-        {_SUNKEN}
-    }}
+    .stButton > button:not([kind="primary"]) p {{ color: {_BLACK} !important; }}
+    .stButton > button:not([kind="primary"]):hover {{ background-color: {_BG_LIGHT} !important; }}
+    .stButton > button:not([kind="primary"]):active {{ {_SUNKEN} }}
     .stButton > button:not([kind="primary"]):hover p,
-    .stButton > button:not([kind="primary"]):focus p {{
-        color: {_BLACK} !important;
-    }}
+    .stButton > button:not([kind="primary"]):focus p {{ color: {_BLACK} !important; }}
 
     /* ── Selectbox / multiselect ── */
     .stSelectbox > div > div,
@@ -389,48 +378,34 @@ st.markdown(f"""
 
     /* ── Progress bar ── */
     .stProgress > div > div {{ background-color: {_NAVY} !important; }}
-    .stProgress {{ background-color: {_WHITE}; border-radius: 0px; {_SUNKEN} }}
+    .stProgress {{ background-color: {_BG_LIGHT}; border-radius: 0px; {_SUNKEN} }}
 
     /* ── Expander ── */
-    [data-testid="stExpander"] {{
-        border: none !important;
-        border-radius: 0px !important;
-    }}
+    [data-testid="stExpander"] {{ border: none !important; border-radius: 0px !important; }}
     [data-testid="stExpander"] > details {{
-        border: none !important;
-        border-radius: 0px !important;
-        background: {_BG} !important;
-        {_RAISED}
+        border: none !important; border-radius: 0px !important;
+        background: {_BG} !important; {_RAISED}
     }}
     [data-testid="stExpander"] > details > summary {{
-        background: linear-gradient(to right, {_NAVY} 0%, #1084d0 100%) !important;
-        color: {_WHITE} !important;
-        border: none !important;
-        border-radius: 0px !important;
+        background: {_TITLE_GRAD} !important;
+        color: {_BLACK} !important;
+        border: none !important; border-radius: 0px !important;
         font-family: 'MS Sans Serif', Arial, sans-serif !important;
-        font-weight: 700 !important;
-        font-size: 0.78rem !important;
+        font-weight: 700 !important; font-size: 0.78rem !important;
         padding: 4px 8px !important;
+        text-shadow: 0 1px 0 rgba(255,255,255,0.4);
     }}
     [data-testid="stExpander"] > details > summary:hover {{
-        background: linear-gradient(to right, #1084d0 0%, {_NAVY} 100%) !important;
-        color: {_WHITE} !important;
+        filter: brightness(1.08) !important;
     }}
     [data-testid="stExpander"] > details > div {{
-        background-color: {_BG} !important;
-        border: none !important;
-        border-radius: 0px !important;
-        padding: 8px !important;
+        background-color: {_BG} !important; border: none !important;
+        border-radius: 0px !important; padding: 8px !important;
     }}
     details > summary {{
-        background: linear-gradient(to right, {_NAVY} 0%, #1084d0 100%) !important;
-        color: {_WHITE} !important;
-        border: none !important;
-        border-radius: 0px !important;
-        padding: 4px 8px !important;
-    }}
-    details > summary:hover {{
-        color: {_WHITE} !important;
+        background: {_TITLE_GRAD} !important;
+        color: {_BLACK} !important; border: none !important;
+        border-radius: 0px !important; padding: 4px 8px !important;
     }}
 
     /* ── Info / alerts ── */
@@ -440,24 +415,21 @@ st.markdown(f"""
     .stTabs [data-baseweb="tab-list"] {{
         gap: 4px;
         border-bottom: 2px solid {_BG_DARK};
-        background-color: {_BG};
+        background-color: {_BG_LIGHT};
         padding-top: 4px;
     }}
     .stTabs [data-baseweb="tab"] {{
         color: {_BLACK} !important;
         font-family: 'MS Sans Serif', Arial, sans-serif;
-        font-size: 0.78rem;
-        font-weight: 400;
-        padding: 4px 14px;
-        border-radius: 0;
+        font-size: 0.78rem; font-weight: 400;
+        padding: 4px 14px; border-radius: 0;
         background-color: {_BG};
         {_RAISED}
         border-bottom: none !important;
-        position: relative;
-        bottom: -2px;
+        position: relative; bottom: -2px;
     }}
     .stTabs [aria-selected="true"] {{
-        color: {_BLACK} !important;
+        color: {_NAVY} !important;
         background-color: {_BG} !important;
         font-weight: 700 !important;
         border-bottom: 2px solid {_BG} !important;
@@ -478,60 +450,45 @@ st.markdown(f"""
     a {{ color: {_NAVY} !important; }}
     a:hover {{ color: {_SELECTED} !important; text-decoration: underline; }}
 
-    /* ── Header bar / title bar ── */
+    /* ── Header bar (amber title bar style) ── */
     .header-bar {{
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 4px 8px;
-        background: linear-gradient(to right, {_NAVY} 0%, #1084d0 100%);
+        background: {_TITLE_GRAD};
         margin-bottom: 10px;
         {_RAISED}
     }}
     .header-bar span {{
-        color: {_WHITE};
+        color: {_BLACK};
         font-family: 'MS Sans Serif', Arial, sans-serif;
         font-size: 0.72rem;
         font-weight: 700;
         letter-spacing: 0;
+        text-shadow: 0 1px 0 rgba(255,255,255,0.5);
     }}
 
     /* ── Popover button ── */
     [data-testid="stPopoverButton"] > button {{
-        background-color: {_BG} !important;
-        color: {_BLACK} !important;
-        border: none !important;
-        border-radius: 0px !important;
+        background-color: {_BG} !important; color: {_BLACK} !important;
+        border: none !important; border-radius: 0px !important;
         font-family: 'MS Sans Serif', Arial, sans-serif !important;
         {_RAISED}
     }}
-    [data-testid="stPopoverButton"] > button p {{
-        color: {_BLACK} !important;
-    }}
-    [data-testid="stPopoverButton"] > button:hover {{
-        background-color: {_BG_LIGHT} !important;
-    }}
-    [data-testid="stPopoverButton"] > button:hover p {{
-        color: {_BLACK} !important;
-    }}
+    [data-testid="stPopoverButton"] > button p {{ color: {_BLACK} !important; }}
+    [data-testid="stPopoverButton"] > button:hover {{ background-color: {_BG_LIGHT} !important; }}
+    [data-testid="stPopoverButton"] > button:hover p {{ color: {_BLACK} !important; }}
 
     /* ── Secondary buttons ── */
     button[kind="secondary"] {{
-        background-color: {_BG} !important;
-        color: {_BLACK} !important;
-        border: none !important;
-        border-radius: 0px !important;
+        background-color: {_BG} !important; color: {_BLACK} !important;
+        border: none !important; border-radius: 0px !important;
         {_RAISED}
     }}
-    button[kind="secondary"] p {{
-        color: {_BLACK} !important;
-    }}
-    button[kind="secondary"]:hover {{
-        background-color: {_BG_LIGHT} !important;
-    }}
-    button[kind="secondary"]:hover p {{
-        color: {_BLACK} !important;
-    }}
+    button[kind="secondary"] p {{ color: {_BLACK} !important; }}
+    button[kind="secondary"]:hover {{ background-color: {_BG_LIGHT} !important; }}
+    button[kind="secondary"]:hover p {{ color: {_BLACK} !important; }}
 
     /* ── Scanning animation ── */
     @keyframes scanning-dots {{
@@ -614,10 +571,10 @@ with _hdr_left:
     st.markdown(
         # Outer window frame — raised border
         "<div style='display:inline-block;margin-bottom:10px;"
-        "border:2px solid;border-color:#dfdfdf #0a0a0a #0a0a0a #dfdfdf;"
-        "box-shadow:1px 1px 0 #808080;background:#c0c0c0;padding:3px'>"
+        "border:2px solid;border-color:#faf0ff #2a2a6e #2a2a6e #faf0ff;"
+        "box-shadow:2px 2px 0 #9898b8;background:#ffffff;padding:3px'>"
         # Title bar
-        "<div style='background:linear-gradient(to right,#000080 0%,#1084d0 100%);"
+        "<div style='background:linear-gradient(to right,#e09010 0%,#f5b835 100%);"
         "padding:3px 4px;display:flex;align-items:center;justify-content:space-between'>"
         # Icon + title
         "<div style='display:flex;align-items:center;gap:5px'>"
@@ -628,23 +585,23 @@ with _hdr_left:
         # Window control buttons
         "<div style='display:flex;gap:2px'>"
         "<span style='display:inline-flex;align-items:center;justify-content:center;"
-        "width:16px;height:14px;background:#c0c0c0;font-size:9px;font-weight:700;color:#000;"
-        "border:1px solid;border-color:#dfdfdf #0a0a0a #0a0a0a #dfdfdf;cursor:default'>─</span>"
+        "width:16px;height:14px;background:#ffffff;font-size:9px;font-weight:700;color:#000;"
+        "border:1px solid;border-color:#faf0ff #2a2a6e #2a2a6e #faf0ff;cursor:default'>─</span>"
         "<span style='display:inline-flex;align-items:center;justify-content:center;"
-        "width:16px;height:14px;background:#c0c0c0;font-size:9px;font-weight:700;color:#000;"
-        "border:1px solid;border-color:#dfdfdf #0a0a0a #0a0a0a #dfdfdf;cursor:default'>□</span>"
+        "width:16px;height:14px;background:#ffffff;font-size:9px;font-weight:700;color:#000;"
+        "border:1px solid;border-color:#faf0ff #2a2a6e #2a2a6e #faf0ff;cursor:default'>□</span>"
         "<span style='display:inline-flex;align-items:center;justify-content:center;"
-        "width:16px;height:14px;background:#c0c0c0;font-size:9px;font-weight:700;color:#000;"
-        "border:1px solid;border-color:#dfdfdf #0a0a0a #0a0a0a #dfdfdf;cursor:default'>✕</span>"
+        "width:16px;height:14px;background:#ffffff;font-size:9px;font-weight:700;color:#000;"
+        "border:1px solid;border-color:#faf0ff #2a2a6e #2a2a6e #faf0ff;cursor:default'>✕</span>"
         "</div>"
         "</div>"
         # Window body
-        "<div style='padding:10px 14px 8px;background:#c0c0c0'>"
+        "<div style='padding:10px 14px 8px;background:#ffffff'>"
         "<div style='font-family:Arial,sans-serif;font-size:2.4rem;font-weight:700;"
-        "color:#000000;line-height:1;letter-spacing:-1px'>WEEKENDED</div>"
-        "<div style='font-family:Arial,sans-serif;font-size:0.82rem;font-weight:700;color:#000000;"
+        "color:#1a1a4a;line-height:1;letter-spacing:-1px'>WEEKENDED</div>"
+        "<div style='font-family:Arial,sans-serif;font-size:0.82rem;font-weight:700;color:#1a1a4a;"
         "margin-top:4px'>Find cheap weekend flights</div>"
-        "<div style='font-family:Arial,sans-serif;font-size:0.72rem;color:#000000;"
+        "<div style='font-family:Arial,sans-serif;font-size:0.72rem;color:#1a1a4a;"
         "margin-top:4px;line-height:1.5;max-width:520px'>"
         "No destination in mind? No fixed dates? Flexible on airports? This scans Google Flights "
         "across your nearest airports and finds the cheapest weekend returns — you just pick what looks good."
@@ -736,8 +693,8 @@ _show_search = st.session_state["search_open"] and not _is_searching
 
 if _show_search:
     st.markdown(
-        "<div style='background:#c0c0c0;"
-        "box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf;"
+        "<div style='background:#ffffff;"
+        "box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;"
         "padding:16px 20px 10px;margin-bottom:8px'>",
         unsafe_allow_html=True,
     )
@@ -832,7 +789,7 @@ if _show_search:
         if not return_days:
             return_days[6] = ("00:00", "23:59")
         st.markdown(
-            "<p style='margin:2px 0 0;color:#808080;font-size:0.55rem;"
+            "<p style='margin:2px 0 0;color:#9898b8;font-size:0.55rem;"
             "font-family:Arial, sans-serif;letter-spacing:0.06em'>"
             "Tip: add Mon for early morning return flights</p>",
             unsafe_allow_html=True,
@@ -1024,18 +981,18 @@ def _render_live_deals_html(deals_list) -> str:
     plural = lambda n: "s" if n != 1 else ""
     for g in sorted_g[:18]:  # Show top 18
         cards.append(
-            f'<div style="background:#c0c0c0;'
-            f'box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf;'
+            f'<div style="background:#ffffff;'
+            f'box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;'
             f'padding:6px 10px;min-width:140px;flex:1;opacity:0.75">'
-            f'<div style="background:linear-gradient(to right,#000080,#1084d0);padding:2px 6px;margin:-6px -10px 5px">'
+            f'<div style="background:linear-gradient(to right,#e09010,#f5b835);padding:2px 6px;margin:-6px -10px 5px">'
             f'<span style="font-weight:700;color:#ffffff;font-family:Arial,sans-serif;'
             f'font-size:0.68rem">{g["city"].upper()}</span>'
             f'</div>'
             f'<div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:2px">'
-            f'<span style="color:#808080;font-family:Arial,sans-serif;font-size:0.6rem">{g["country"]}</span>'
-            f'<b style="color:#000080;font-family:Arial,sans-serif;font-size:0.85rem">£{g["min_price"]:.0f}</b>'
+            f'<span style="color:#9898b8;font-family:Arial,sans-serif;font-size:0.6rem">{g["country"]}</span>'
+            f'<b style="color:#4a5bcc;font-family:Arial,sans-serif;font-size:0.85rem">£{g["min_price"]:.0f}</b>'
             f'</div>'
-            f'<div style="color:#808080;font-family:Arial,sans-serif;'
+            f'<div style="color:#9898b8;font-family:Arial,sans-serif;'
             f'font-size:0.58rem;margin-top:2px">'
             f'{g["count"]} date{plural(g["count"])}</div>'
             f'</div>'
@@ -1118,7 +1075,7 @@ if _is_searching:
         route_summary = st.empty()
         route_summary.markdown(
             f"<p style='font-family:Arial, sans-serif;font-size:0.78rem;"
-            f"color:#000000;letter-spacing:0.06em;margin:8px 0 12px'>"
+            f"color:#1a1a4a;letter-spacing:0.06em;margin:8px 0 12px'>"
             f"SCANNING {_total_routes} ROUTES ACROSS {_n_airports} AIRPORT{'S' if _n_airports != 1 else ''}"
             f" ({_airport_list})</p>",
             unsafe_allow_html=True,
@@ -1169,7 +1126,7 @@ if _is_searching:
 
                 status_line.markdown(
                     f"<p style='font-family:Arial, sans-serif;font-size:0.72rem;"
-                    f"color:#000000;letter-spacing:0.05em;margin:2px 0'>"
+                    f"color:#1a1a4a;letter-spacing:0.05em;margin:2px 0'>"
                     f"[{pct}%] {_friendly_msg}</p>",
                     unsafe_allow_html=True,
                 )
@@ -1179,7 +1136,7 @@ if _is_searching:
                     dests = len({d.destination_city or d.destination for d in _live_deals})
                     live_count.markdown(
                         f"<p style='font-family:Arial, sans-serif;font-size:0.75rem;"
-                        f"color:#000080;letter-spacing:0.08em;margin:4px 0'>"
+                        f"color:#4a5bcc;letter-spacing:0.08em;margin:4px 0'>"
                         f"<b>{n}</b> DEALS ———— <b>{dests}</b> DESTINATIONS</p>",
                         unsafe_allow_html=True,
                     )
@@ -1257,15 +1214,15 @@ with tab_all:
             _n_dests = len({d.destination_city or d.destination for d in deals})
             st.markdown(
                 f"<span style='font-family:Arial, sans-serif;font-size:0.75rem;"
-                f"color:#000000;letter-spacing:0.05em'>"
-                f"<b style='color:#000080;font-size:1.1rem'>{len(deals)}</b> DEALS "
+                f"color:#1a1a4a;letter-spacing:0.05em'>"
+                f"<b style='color:#4a5bcc;font-size:1.1rem'>{len(deals)}</b> DEALS "
                 f"———— {_n_dests} DESTINATIONS</span>",
                 unsafe_allow_html=True,
             )
         else:
             st.markdown(
                 "<span style='font-family:Arial, sans-serif;font-size:0.75rem;"
-                "color:#808080'>NO DEALS — RUN A SEARCH</span>",
+                "color:#9898b8'>NO DEALS — RUN A SEARCH</span>",
                 unsafe_allow_html=True,
             )
 
@@ -1317,13 +1274,13 @@ with tab_all:
 
         st.markdown(
             f"<div style='margin:8px 0 4px'>"
-            f"<span style='font-size:2rem;font-weight:900;color:#000080;text-transform:uppercase;"
+            f"<span style='font-size:2rem;font-weight:900;color:#4a5bcc;text-transform:uppercase;"
             f"letter-spacing:-0.01em'>{selected}</span>"
-            + (f"<span style='color:#808080;font-family:Arial, sans-serif;"
+            + (f"<span style='color:#9898b8;font-family:Arial, sans-serif;"
                f"font-size:0.8rem;margin-left:14px'>{country}</span>" if country else "")
             + f"</div>"
             f"<div style='font-family:Arial, sans-serif;font-size:0.85rem;"
-            f"color:#000000;margin-bottom:12px'>"
+            f"color:#1a1a4a;margin-bottom:12px'>"
             f"FROM £{cheapest.price_gbp:.0f} ———— {len(dest_deals)} OPTIONS ———— {airlines_str.upper()}"
             f"</div>",
             unsafe_allow_html=True,
@@ -1335,7 +1292,7 @@ with tab_all:
         with st.popover("🌍 Where is this?", key="map_detail"):
             st.markdown(
                 f"<p style='font-family:Arial, sans-serif;font-size:0.8rem;"
-                f"color:#000080;letter-spacing:0.05em;margin-bottom:8px'>"
+                f"color:#4a5bcc;letter-spacing:0.05em;margin-bottom:8px'>"
                 f"<b>🌍 {selected}, {country.upper()}</b></p>",
                 unsafe_allow_html=True,
             )
@@ -1349,9 +1306,9 @@ with tab_all:
             _map_url = f"https://www.google.com/maps/search/?api=1&query={_map_embed_q}"
             st.markdown(
                 f"<p style='font-family:Arial, sans-serif;font-size:0.65rem;"
-                f"color:#808080;margin-top:8px;letter-spacing:0.05em'>"
+                f"color:#9898b8;margin-top:8px;letter-spacing:0.05em'>"
                 f"✈ {cheapest.destination} · <a href='{_map_url}' target='_blank' "
-                f"style='color:#000000'>Open in Google Maps →</a></p>",
+                f"style='color:#1a1a4a'>Open in Google Maps →</a></p>",
                 unsafe_allow_html=True,
             )
 
@@ -1368,20 +1325,20 @@ with tab_all:
             _border_col = "#000080" if _is_fav else "#808080"
             _bg = "#ffffff" if _is_fav else "transparent"
 
-            _raised = "box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf"
+            _raised = "box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff"
             _deal_html = (
                 f'<div style="background:{_bg};{_raised};'
                 f'padding:8px 14px;margin-bottom:4px;display:flex;'
                 f'align-items:center;justify-content:space-between">'
                 f'<div style="font-family:Arial,sans-serif;font-size:0.78rem;'
-                f'color:#000000">'
-                f'<b style="color:#000080;font-size:0.95rem">£{deal.price_gbp:.0f}</b>'
+                f'color:#1a1a4a">'
+                f'<b style="color:#4a5bcc;font-size:0.95rem">£{deal.price_gbp:.0f}</b>'
                 f'&nbsp;&nbsp;{dep} → {ret}'
                 f'&nbsp;&nbsp;{deal.airline}'
                 f'&nbsp;&nbsp;{deal.nights}N'
                 f'&nbsp;&nbsp;{deal.origin}'
                 f'</div>'
-                f'<span style="color:#000080;font-size:1.2rem">{_heart}</span>'
+                f'<span style="color:#4a5bcc;font-size:1.2rem">{_heart}</span>'
                 f'</div>'
             )
             st.markdown(_deal_html, unsafe_allow_html=True)
@@ -1401,8 +1358,8 @@ with tab_all:
                 if link:
                     st.markdown(
                         f"<a href='{link}' target='_blank' style='display:block;text-align:center;"
-                        f"padding:0.4rem;background:#c0c0c0;color:#000000;"
-                        f"box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf;"
+                        f"padding:0.4rem;background:#ffffff;color:#1a1a4a;"
+                        f"box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;"
                         f"text-decoration:none;font-family:Arial,sans-serif;font-size:0.75rem;"
                         f"font-weight:700'>Book →</a>",
                         unsafe_allow_html=True,
@@ -1434,7 +1391,7 @@ with tab_all:
 
         st.markdown(
             f"<span style='font-family:Arial, sans-serif;font-size:0.7rem;"
-            f"color:#808080;letter-spacing:0.1em;text-transform:uppercase'>"
+            f"color:#9898b8;letter-spacing:0.1em;text-transform:uppercase'>"
             f"{len(groups)} destinations ———— {len(filtered)} total options</span>",
             unsafe_allow_html=True,
         )
@@ -1454,25 +1411,25 @@ with tab_all:
                     example_dep = g["example_dep"]
                     example_nights = g["example_nights"]
                     plural = "s" if count != 1 else ""
-                    _date_text = f"<b style='color:#000000'>{count} date{plural}</b>"
+                    _date_text = f"<b style='color:#1a1a4a'>{count} date{plural}</b>"
 
                     # Visual card container
                     st.markdown(
                         f"<div style='background:#ffffff;"
-                        f"box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf;"
+                        f"box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;"
                         f"padding:8px 12px;margin-bottom:2px'>"
-                        f"<div style='background:linear-gradient(to right,#000080 0%,#1084d0 100%);"
+                        f"<div style='background:linear-gradient(to right,#e09010 0%,#f5b835 100%);"
                         f"padding:3px 8px;margin:-8px -12px 8px;'>"
                         f"<span style='color:#ffffff;font-family:Arial,sans-serif;font-size:0.75rem;font-weight:700'>"
                         f"{city.upper()}</span>"
                         f"</div>"
                         f"<div style='display:flex;justify-content:space-between;align-items:baseline'>"
-                        f"<span style='font-family:Arial,sans-serif;font-size:0.72rem;color:#000000'>"
+                        f"<span style='font-family:Arial,sans-serif;font-size:0.72rem;color:#1a1a4a'>"
                         f"{country}</span>"
-                        f"<b style='color:#000080;font-size:1.05rem;font-family:Arial,sans-serif'>£{price:.0f}</b>"
+                        f"<b style='color:#4a5bcc;font-size:1.05rem;font-family:Arial,sans-serif'>£{price:.0f}</b>"
                         f"</div>"
                         f"<div style='font-family:Arial,sans-serif;font-size:0.65rem;"
-                        f"color:#808080;margin-top:2px'>"
+                        f"color:#9898b8;margin-top:2px'>"
                         f"{_date_text}"
                         f"</div>"
                         f"</div>",
@@ -1491,7 +1448,7 @@ with tab_all:
                         with st.popover("🌍", key=f"map_{city}", use_container_width=True):
                             st.markdown(
                                 f"<p style='font-family:Arial, sans-serif;font-size:0.8rem;"
-                                f"color:#000080;letter-spacing:0.05em;margin-bottom:8px'>"
+                                f"color:#4a5bcc;letter-spacing:0.05em;margin-bottom:8px'>"
                                 f"<b>🌍 {city}, {country.upper()}</b></p>",
                                 unsafe_allow_html=True,
                             )
@@ -1505,9 +1462,9 @@ with tab_all:
                             _map_url = f"https://www.google.com/maps/search/?api=1&query={_map_embed_q}"
                             st.markdown(
                                 f"<p style='font-family:Arial, sans-serif;font-size:0.65rem;"
-                                f"color:#808080;margin-top:8px;letter-spacing:0.05em'>"
+                                f"color:#9898b8;margin-top:8px;letter-spacing:0.05em'>"
                                 f"✈ {g['dest_code']} · <a href='{_map_url}' target='_blank' "
-                                f"style='color:#000000'>Open in Google Maps →</a></p>",
+                                f"style='color:#1a1a4a'>Open in Google Maps →</a></p>",
                                 unsafe_allow_html=True,
                             )
 
@@ -1522,7 +1479,7 @@ with tab_all:
     else:
         if deals:
             st.markdown(
-                "<p style='font-family:Arial, sans-serif;color:#808080;"
+                "<p style='font-family:Arial, sans-serif;color:#9898b8;"
                 "font-size:0.8rem;padding:2rem 0;letter-spacing:0.05em'>"
                 "NO DEALS MATCH CURRENT FILTER</p>",
                 unsafe_allow_html=True,
@@ -1530,18 +1487,18 @@ with tab_all:
         else:
             st.markdown(
                 "<div style='padding:3rem 0;text-align:center'>"
-                "<p style='font-family:Arial, sans-serif;color:#000000;"
+                "<p style='font-family:Arial, sans-serif;color:#1a1a4a;"
                 "font-size:1rem;letter-spacing:0.05em;font-weight:700;margin-bottom:16px'>"
                 "READY TO FIND YOUR NEXT WEEKEND AWAY?</p>"
-                "<p style='font-family:Arial, sans-serif;color:#808080;"
+                "<p style='font-family:Arial, sans-serif;color:#9898b8;"
                 "font-size:0.72rem;letter-spacing:0.06em;line-height:2'>"
-                "1. Open <b style='color:#000000'>[ SEARCH ]</b> above<br>"
+                "1. Open <b style='color:#1a1a4a'>[ SEARCH ]</b> above<br>"
                 "2. Pick your departure airport and travel dates<br>"
-                "3. Hit <b style='color:#000000'>Search</b> — "
+                "3. Hit <b style='color:#1a1a4a'>Search</b> — "
                 "we scan Google Flights for the cheapest weekend return flights<br>"
-                "4. Browse destinations, then hit <b style='color:#000000'>Book</b> "
+                "4. Browse destinations, then hit <b style='color:#1a1a4a'>Book</b> "
                 "to see exact flight times and book on Skyscanner</p>"
-                "<p style='font-family:Arial, sans-serif;color:#808080;"
+                "<p style='font-family:Arial, sans-serif;color:#9898b8;"
                 "font-size:0.62rem;letter-spacing:0.08em;margin-top:20px'>"
                 "TIP: Add Mon to your return days to catch early morning flights back for work</p>"
                 "</div>",
@@ -1557,7 +1514,7 @@ with tab_favs:
 
     if not fav_ids:
         st.markdown(
-            "<p style='font-family:Arial, sans-serif;color:#808080;"
+            "<p style='font-family:Arial, sans-serif;color:#9898b8;"
             "font-size:0.8rem;padding:2rem 0;letter-spacing:0.05em'>"
             "NO FAVOURITES YET — CLICK ♡ ON A FLIGHT TO SAVE IT HERE</p>",
             unsafe_allow_html=True,
@@ -1565,7 +1522,7 @@ with tab_favs:
     else:
         if fav_ids:
             st.markdown(
-                "<p style='font-family:Arial, sans-serif;color:#808080;"
+                "<p style='font-family:Arial, sans-serif;color:#9898b8;"
                 "font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
                 "margin-bottom:8px'>♥ Favourited Flights</p>",
                 unsafe_allow_html=True,
@@ -1581,20 +1538,20 @@ with tab_favs:
                     country = deal.destination_country or ""
 
                     st.markdown(
-                        f"""<div style="background:#ffffff;box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf;
+                        f"""<div style="background:#ffffff;box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;
                             padding:8px 14px;margin-bottom:4px">
                             <div style="display:flex;justify-content:space-between;align-items:baseline">
                                 <div style="font-family:Arial,sans-serif;font-size:0.78rem;
-                                    color:#000000">
-                                    <b style="color:#000080;font-size:0.95rem">£{deal.price_gbp:.0f}</b>
-                                    &nbsp;&nbsp; <b style="color:#000080">{city.upper()}</b>
-                                    <span style="color:#808080;font-size:0.68rem">&nbsp;{country.upper()}</span>
+                                    color:#1a1a4a">
+                                    <b style="color:#4a5bcc;font-size:0.95rem">£{deal.price_gbp:.0f}</b>
+                                    &nbsp;&nbsp; <b style="color:#4a5bcc">{city.upper()}</b>
+                                    <span style="color:#9898b8;font-size:0.68rem">&nbsp;{country.upper()}</span>
                                     &nbsp;&nbsp;{dep} → {ret}
                                     &nbsp;&nbsp;{deal.airline}
                                     &nbsp;&nbsp;{deal.nights}N
                                     &nbsp;&nbsp;{deal.origin}
                                 </div>
-                                <span style="color:#000080;font-size:1rem">♥</span>
+                                <span style="color:#4a5bcc;font-size:1rem">♥</span>
                             </div>
                         </div>""",
                         unsafe_allow_html=True,
@@ -1611,7 +1568,7 @@ with tab_favs:
                         if link:
                             st.markdown(
                                 f"<a href='{link}' target='_blank' style='display:block;text-align:center;"
-                                f"padding:0.45rem;border:1px solid #808080;color:#000000;"
+                                f"padding:0.45rem;border:1px solid #808080;color:#1a1a4a;"
                                 f"text-decoration:none;font-family:Arial, sans-serif;font-size:0.72rem;"
                                 f"letter-spacing:0.08em;text-transform:uppercase'>Book →</a>",
                                 unsafe_allow_html=True,
@@ -1621,7 +1578,7 @@ with tab_favs:
                             st.code(_share_deal_text(deal), language=None)
             else:
                 st.markdown(
-                    "<p style='font-family:Arial, sans-serif;color:#808080;"
+                    "<p style='font-family:Arial, sans-serif;color:#9898b8;"
                     "font-size:0.75rem'>FAVOURITED FLIGHTS NOT IN CURRENT DATA</p>",
                     unsafe_allow_html=True,
                 )
@@ -1632,12 +1589,12 @@ st.markdown('<div class="dot-separator"></div>', unsafe_allow_html=True)
 st.markdown(
     "<div style='text-align:center;padding:16px 0 8px'>"
     "<p style='font-family:Arial, sans-serif;font-size:0.62rem;"
-    "color:#808080;letter-spacing:0.08em;text-transform:uppercase;"
+    "color:#9898b8;letter-spacing:0.08em;text-transform:uppercase;"
     "margin:0'>"
     "Prices are indicative returns per person ———— Source: Google Flights "
     "———— Booking links open Skyscanner</p>"
     "<p style='font-family:Arial, sans-serif;font-size:0.55rem;"
-    "color:#808080;letter-spacing:0.06em;margin:6px 0 0'>"
+    "color:#9898b8;letter-spacing:0.06em;margin:6px 0 0'>"
     "Prices may change between scanning and booking · Always confirm before you pay</p>"
     "</div>",
     unsafe_allow_html=True,
