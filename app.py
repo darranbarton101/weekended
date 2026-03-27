@@ -134,6 +134,8 @@ def _detach_log_capture(handler: _LogCapture) -> None:
 st.set_page_config(page_title="Weekended", page_icon="✈", layout="wide")
 
 # ── Favourites persistence ───────────────────────────────────────────────────
+# Favourites are session-only — no server-side file, so one user's
+# favourites never bleed into another user's session.
 
 _FAV_PATH = Path("data/favourites.json")
 
@@ -156,8 +158,8 @@ def _save_favourites() -> None:
 
 
 if "fav_flights" not in st.session_state:
-    _saved = _load_favourites()
-    st.session_state["fav_flights"] = set(_saved.get("fav_flights", []))
+    # Always start blank — never load from shared server file
+    st.session_state["fav_flights"] = set()
 
 
 # ── Persistent search settings ───────────────────────────────────────────────
@@ -670,7 +672,7 @@ if _serp_key_hdr:
             f"<span style='color:{_credit_colour};font-weight:700'>{_credit_label}</span>"
         )
     else:
-        _serp_credit_html = "<span>SERPAPI: —</span>"
+        _serp_credit_html = "<span style='color:#ff8c00'>⚠ SERPAPI: could not verify credits</span>"
 
 st.markdown(
     f"""<div class="header-bar">
@@ -1224,9 +1226,20 @@ with tab_all:
                 unsafe_allow_html=True,
             )
         else:
+            _searched = "last_log" in st.session_state
+            _had_errors = _searched and bool(st.session_state["last_log"].get("errors"))
+            if _had_errors:
+                _empty_msg = "⚠ SEARCH FAILED — SEE LOG BELOW"
+                _empty_col = "#cc3300"
+            elif _searched:
+                _empty_msg = "0 RESULTS — TRY WIDENING YOUR FILTERS"
+                _empty_col = "#9898b8"
+            else:
+                _empty_msg = "SELECT YOUR AIRPORTS ABOVE AND HIT SEARCH"
+                _empty_col = "#9898b8"
             st.markdown(
-                "<span style='font-family:Arial, sans-serif;font-size:0.75rem;"
-                "color:#9898b8'>NO DEALS — RUN A SEARCH</span>",
+                f"<span style='font-family:Arial, sans-serif;font-size:0.75rem;"
+                f"color:{_empty_col}'>{_empty_msg}</span>",
                 unsafe_allow_html=True,
             )
 
