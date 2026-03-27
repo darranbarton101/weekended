@@ -688,49 +688,61 @@ if "search_open" not in st.session_state:
     st.session_state["search_open"] = True
 _is_searching = st.session_state.get("_run_search", False)
 
-# Toggle button
-_toggle_label = "▼ [ Search ]" if st.session_state["search_open"] else "► [ Search ]"
+# Build toggle label — show current settings summary when collapsed
+_last_origins_ss = st.session_state.get("_last_origins", [])
+_last_months_ss  = st.session_state.get("_last_month_range", (1, 6))
+_last_price_ss   = st.session_state.get("_last_max_price", 300)
+_last_stops_ss   = st.session_state.get("_last_max_stopovers", 2)
+_origins_str = ", ".join(_last_origins_ss) if _last_origins_ss else "—"
+_months_str  = f"{_last_months_ss[0]}–{_last_months_ss[1]} months"
+_price_str   = f"£{_last_price_ss}"
+_stops_str   = {0: "Direct only", 1: "Max 1 stop", 2: "Any stops"}[_last_stops_ss]
+
+if st.session_state["search_open"]:
+    _toggle_label = "✈ Search Flights ▲"
+else:
+    _toggle_label = f"✈ {_origins_str} · {_months_str} · {_price_str} · {_stops_str} ▼"
+
 if st.button(_toggle_label, key="search_toggle", use_container_width=True):
     st.session_state["search_open"] = not st.session_state["search_open"]
     st.rerun()
 
 # Widgets always render (hidden or not) so state persists via keys
-# Use a container we can show/hide
 _show_search = st.session_state["search_open"] and not _is_searching
 
 if _show_search:
     st.markdown(
         "<div style='background:#ffffff;"
         "box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;"
-        "padding:16px 20px 10px;margin-bottom:8px'>",
+        "padding:16px 20px 12px;margin-bottom:8px'>",
         unsafe_allow_html=True,
     )
 
-    r1c1, r1c2, r1c3, r1c4 = st.columns([3, 1.5, 1.5, 1.5])
+    # ── Row A: Airport — full width ──
+    st.caption("DEPARTING FROM")
+    # Airports are session-only — never restored from disk (shared server file
+    # would leak one user's airports to the next person to load the page)
+    if "_ms_airports" not in st.session_state:
+        st.session_state["_ms_airports"] = []
+    selected_airports = st.multiselect(
+        "airports",
+        options=list(AIRPORT_OPTIONS.keys()),
+        key="_ms_airports",
+        format_func=lambda x: AIRPORT_OPTIONS.get(x, x),
+        label_visibility="collapsed",
+        max_selections=3,
+        placeholder="Select up to 3 departure airports…",
+    )
+    origins = selected_airports or ["GLA"]
 
-    with r1c1:
-        st.caption("DEPARTING FROM")
-        # Airports are session-only — never restored from disk (shared server file
-        # would leak one user's airports to the next person to load the page)
-        if "_ms_airports" not in st.session_state:
-            st.session_state["_ms_airports"] = []
-        selected_airports = st.multiselect(
-            "airports",
-            options=list(AIRPORT_OPTIONS.keys()),
-            key="_ms_airports",
-            format_func=lambda x: AIRPORT_OPTIONS.get(x, x),
-            label_visibility="collapsed",
-            max_selections=3,
-        )
-        origins = selected_airports or ["GLA"]
-
-    with r1c2:
-        st.caption("HOW FAR AHEAD? (months)")
+    # ── Row B: Sliders — 2 columns so each has room ──
+    rb1, rb2 = st.columns(2)
+    with rb1:
+        st.caption("MONTHS AHEAD")
         _pref_months = _saved_prefs.get("month_range", [1, 6])
         month_range = st.slider("Months", 1, 12, tuple(_pref_months), label_visibility="collapsed")
-
-    with r1c3:
-        st.caption("MAX PRICE")
+    with rb2:
+        st.caption("MAX PRICE (GBP)")
         _pref_price = _saved_prefs.get("max_price", int(dp.get("max_price_gbp", 300)))
         max_price = st.slider(
             "Max price", min_value=20, max_value=600,
@@ -738,33 +750,35 @@ if _show_search:
             format="£%d", label_visibility="collapsed",
         )
 
-    with r1c4:
-        st.caption("STOPS")
-        _stops_opts = ["Direct", "1 stop", "Any"]
-        _pref_stops = _saved_prefs.get("stops", "Any")
-        _stops_idx = _stops_opts.index(_pref_stops) if _pref_stops in _stops_opts else 2
-        stops_label = st.radio(
-            "Stops", _stops_opts,
-            index=_stops_idx, horizontal=True, label_visibility="collapsed",
-        )
-        max_stopovers = {"Direct": 0, "1 stop": 1, "Any": 2}[stops_label]
+    # ── Row C: Stops — full width selectbox (safe on mobile) ──
+    st.caption("STOPS")
+    _stops_opts = ["Any", "Direct only", "Max 1 stop"]
+    _pref_stops = _saved_prefs.get("stops", "Any")
+    # Map old "Direct"/"1 stop" prefs to new labels
+    _stops_compat = {"Direct": "Direct only", "1 stop": "Max 1 stop", "Any": "Any"}
+    _pref_stops_mapped = _stops_compat.get(_pref_stops, "Any")
+    _stops_idx = _stops_opts.index(_pref_stops_mapped) if _pref_stops_mapped in _stops_opts else 0
+    stops_label = st.selectbox(
+        "Stops", _stops_opts, index=_stops_idx, label_visibility="collapsed",
+    )
+    max_stopovers = {"Any": 2, "Direct only": 0, "Max 1 stop": 1}[stops_label]
 
-    # Day pickers — multiselect (reliable cross-platform styling)
+    # ── Row D: Day pickers — 2 columns ──
     _day_options = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     _day_to_idx = {name: i for i, name in enumerate(_day_options)}
 
     r2c1, r2c2 = st.columns(2)
-
     with r2c1:
         _pref_dep = _saved_prefs.get("dep_days", {})
-        if _pref_dep:
-            _dep_default = [_day_options[int(k)] for k in _pref_dep.keys() if int(k) < 7]
-        else:
-            _dep_default = ["Thu", "Fri"]
+        _dep_default = (
+            [_day_options[int(k)] for k in _pref_dep.keys() if int(k) < 7]
+            if _pref_dep else ["Thu", "Fri"]
+        )
         _dep_selected = st.multiselect(
             "Depart on", _day_options,
             default=_dep_default,
             key="dep_pills",
+            placeholder="Pick departure days…",
         )
         departure_days: dict[int, tuple[str, str]] = {}
         for name in (_dep_selected or []):
@@ -774,42 +788,33 @@ if _show_search:
 
     with r2c2:
         _pref_ret = _saved_prefs.get("ret_days", {})
-        if _pref_ret:
-            _ret_default = [_day_options[int(k)] for k in _pref_ret.keys() if int(k) < 7]
-        else:
-            _ret_default = ["Sun"]
+        _ret_default = (
+            [_day_options[int(k)] for k in _pref_ret.keys() if int(k) < 7]
+            if _pref_ret else ["Sun"]
+        )
         _ret_selected = st.multiselect(
             "Return on", _day_options,
             default=_ret_default,
             key="ret_pills",
+            placeholder="Pick return days…",
         )
         return_days: dict[int, tuple[str, str]] = {}
         for name in (_ret_selected or []):
             return_days[_day_to_idx[name]] = ("00:00", "23:59")
         if not return_days:
             return_days[6] = ("00:00", "23:59")
-        st.caption("Tip: add Mon to catch early morning return flights")
+        st.caption("💡 Add Mon to catch early morning return flights")
 
-    # Row 3
-    r3c1, r3c2 = st.columns([3, 1.5])
-
+    # ── Row E: Search button — full width ──
     serpapi_key = os.environ.get("SERPAPI_KEY", "")
+    use_serpapi_ui = bool(serpapi_key)
+    use_ryanair_ui = False
+    st.write("")
+    run_search = st.button("🔍 Search", type="primary", use_container_width=True)
 
-    with r3c1:
-        _serp_status = "CONNECTED" if serpapi_key else "KEY NOT SET"
-        _status_col = "#000080" if serpapi_key else "#808080"
-        st.markdown(
-            f"<span style='font-family:Arial, sans-serif;font-size:0.68rem;"
-            f"color:{_status_col};letter-spacing:0.08em'>● SERPAPI {_serp_status}</span>",
-            unsafe_allow_html=True,
-        )
-        use_serpapi_ui = bool(serpapi_key)
-        use_ryanair_ui = False
+    # Advanced options — hidden by default, not cluttering main form
+    with st.expander("⚙ Advanced"):
         force_refresh_ui = st.checkbox("Force refresh (bypass cache)", value=False, key="force_refresh")
-
-    with r3c2:
-        st.write("")
-        run_search = st.button("Search", type="primary", use_container_width=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -819,7 +824,7 @@ else:
     origins = st.session_state.get("_last_origins", _saved_prefs.get("airports", ["GLA", "EDI"]))
     month_range = st.session_state.get("_last_month_range", tuple(_saved_prefs.get("month_range", [1, 6])))
     max_price = st.session_state.get("_last_max_price", _saved_prefs.get("max_price", int(dp.get("max_price_gbp", 300))))
-    _stops_map = {"Direct": 0, "1 stop": 1, "Any": 2}
+    _stops_map = {"Any": 2, "Direct only": 0, "Max 1 stop": 1, "Direct": 0, "1 stop": 1}
     max_stopovers = st.session_state.get("_last_max_stopovers", _stops_map.get(_saved_prefs.get("stops", "Any"), 2))
     _pref_dep_raw = _saved_prefs.get("dep_days", {})
     _dep_default = {int(k): tuple(v) for k, v in _pref_dep_raw.items()} if _pref_dep_raw else {3: ("17:00", "23:59"), 4: ("00:00", "11:59")}
@@ -831,6 +836,8 @@ else:
     use_serpapi_ui = bool(serpapi_key)
     use_ryanair_ui = False
     force_refresh_ui = False
+    _day_options = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    _day_to_idx = {name: i for i, name in enumerate(_day_options)}
 
 # Save current params so they persist when panel is closed AND across sessions
 if _show_search:
