@@ -52,6 +52,7 @@ def _call_ryanair(
     params: ScanParams,
     max_retries: int = 3,
     backoff_base: int = 2,
+    on_retry: Callable[[str], None] | None = None,
 ) -> list[dict]:
     dep_wd = out_date.weekday()
     dep_config = params.departure_days.get(dep_wd, ("00:00", "23:59"))
@@ -79,14 +80,20 @@ def _call_ryanair(
             if resp.status_code == 200:
                 return resp.json().get("fares", [])
             elif resp.status_code == 429:
-                time.sleep(backoff_base ** (attempt + 2))
+                wait = backoff_base ** (attempt + 2)
+                if on_retry:
+                    on_retry(f"↻ Ryanair rate limited — waiting {wait}s (attempt {attempt + 1}/{max_retries})")
+                time.sleep(wait)
             elif resp.status_code in (403, 451):
                 logger.debug("Ryanair blocked %s %s (status %d)", origin, out_date, resp.status_code)
                 return []
             else:
                 return []
         except RequestException as exc:
-            time.sleep(backoff_base ** (attempt + 1))
+            wait = backoff_base ** (attempt + 1)
+            if on_retry:
+                on_retry(f"↻ Ryanair timeout — retrying in {wait}s (attempt {attempt + 1}/{max_retries})")
+            time.sleep(wait)
             logger.debug("Ryanair network error: %s", exc)
 
     return []

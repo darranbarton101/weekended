@@ -10,6 +10,7 @@ import logging
 import os
 import random
 import re
+import uuid as _uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -28,7 +29,7 @@ for _key in ("SERPAPI_KEY", "SUPABASE_URL", "SUPABASE_KEY"):
             pass
 
 # enrich_flight_times removed — simplified UI
-from travel_scanner.deal_store import get_connection, load_deals, mark_notified, clear_all_deals
+from travel_scanner.deal_store import get_connection, load_deals, mark_notified, get_user_prefs, save_user_prefs
 from travel_scanner.models import DAY_NAMES, DAY_SHORT, ScanParams
 from travel_scanner.scanner import load_config, run_scan_streaming
 
@@ -133,6 +134,20 @@ def _detach_log_capture(handler: _LogCapture) -> None:
 
 st.set_page_config(page_title="Weekended", page_icon="✈", layout="wide")
 
+# ── User identity — per-browser UUID via query param ─────────────────────────
+# First visit: generate a UUID and embed it in the URL.
+# Return visits (with bookmarked URL): restore preferences from Supabase.
+if "uid" not in st.query_params:
+    st.query_params["uid"] = str(_uuid.uuid4())
+_UID = st.query_params["uid"]
+
+# Early DB connection (used for user prefs before the search panel renders)
+_db_conn = None
+try:
+    _db_conn = get_connection()
+except Exception:
+    pass  # will fall back to file-based prefs
+
 # ── Favourites persistence ───────────────────────────────────────────────────
 # Favourites are session-only — no server-side file, so one user's
 # favourites never bleed into another user's session.
@@ -150,16 +165,21 @@ def _load_favourites() -> dict:
 
 
 def _save_favourites() -> None:
-    _FAV_PATH.parent.mkdir(parents=True, exist_ok=True)
-    data = {
-        "fav_flights": list(st.session_state.get("fav_flights", set())),
-    }
-    _FAV_PATH.write_text(json.dumps(data))
+    favs = list(st.session_state.get("fav_flights", set()))
+    if _db_conn:
+        save_user_prefs(_db_conn, _UID, {"favourites": favs})
+    else:
+        # File fallback — only used if Supabase is unavailable
+        _FAV_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _FAV_PATH.write_text(json.dumps({"fav_flights": favs}))
 
 
 if "fav_flights" not in st.session_state:
-    # Always start blank — never load from shared server file
-    st.session_state["fav_flights"] = set()
+    _fav_list: list = []
+    if _db_conn:
+        _up = get_user_prefs(_db_conn, _UID)
+        _fav_list = _up.get("favourites", [])
+    st.session_state["fav_flights"] = set(_fav_list)
 
 
 # ── Persistent search settings ───────────────────────────────────────────────
@@ -168,6 +188,12 @@ _SEARCH_PREFS_PATH = Path("data/search_prefs.json")
 
 
 def _load_search_prefs() -> dict:
+    # Try Supabase first (per-user, keyed by UID)
+    if _db_conn:
+        prefs = get_user_prefs(_db_conn, _UID)
+        if prefs:
+            return prefs
+    # Fall back to local file (legacy / Supabase unavailable)
     if _SEARCH_PREFS_PATH.exists():
         try:
             return json.loads(_SEARCH_PREFS_PATH.read_text())
@@ -177,8 +203,11 @@ def _load_search_prefs() -> dict:
 
 
 def _save_search_prefs(prefs: dict) -> None:
-    _SEARCH_PREFS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _SEARCH_PREFS_PATH.write_text(json.dumps(prefs))
+    if _db_conn:
+        save_user_prefs(_db_conn, _UID, prefs)
+    else:
+        _SEARCH_PREFS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _SEARCH_PREFS_PATH.write_text(json.dumps(prefs))
 
 
 _saved_prefs = _load_search_prefs()
@@ -722,10 +751,9 @@ if _show_search:
 
     # ── Row A: Airport — full width ──
     st.caption("DEPARTING FROM")
-    # Airports are session-only — never restored from disk (shared server file
-    # would leak one user's airports to the next person to load the page)
+    # Airports loaded from per-user Supabase prefs (safe — keyed by UID)
     if "_ms_airports" not in st.session_state:
-        st.session_state["_ms_airports"] = []
+        st.session_state["_ms_airports"] = _saved_prefs.get("airports", [])
     selected_airports = st.multiselect(
         "airports",
         options=list(AIRPORT_OPTIONS.keys()),
@@ -851,15 +879,15 @@ if _show_search:
     st.session_state["_last_ret_days"] = return_days
     st.session_state["_force_refresh"] = force_refresh_ui
 
-    # Persist other prefs to disk — airports excluded (session-only to avoid
-    # leaking one user's airports to the next person who loads the page)
+    # Persist all prefs per-user via Supabase (airports now safe to save — keyed by UID)
     _stopovers_to_label = {0: "Direct", 1: "1 stop", 2: "Any"}
     _save_search_prefs({
+        "airports":   list(origins),
         "month_range": list(month_range),
-        "max_price": max_price,
-        "stops": _stopovers_to_label.get(max_stopovers, "Any"),
-        "dep_days": {str(k): list(v) for k, v in departure_days.items()},
-        "ret_days": {str(k): list(v) for k, v in return_days.items()},
+        "max_price":  max_price,
+        "stops":      _stopovers_to_label.get(max_stopovers, "Any"),
+        "dep_days":   {str(k): list(v) for k, v in departure_days.items()},
+        "ret_days":   {str(k): list(v) for k, v in return_days.items()},
     })
 
 # ── Build ScanParams ─────────────────────────────────────────────────────────
@@ -1060,10 +1088,9 @@ if _is_searching:
     if not os.environ.get("SERPAPI_KEY") and not config.get("ryanair", {}).get("enabled", True):
         st.error("No API source configured.")
     else:
-        # Clear old results — wipe DB so stale deals don't persist
-        conn = get_connection(db_path)
-        clear_all_deals(conn)
-        # conn.close()  # Supabase client doesn't need closing
+        # DB connection error is non-fatal — scan will use in-memory results
+        if _db_conn is None:
+            st.warning("⚠ Database unavailable — results won't be saved this session.")
 
 
 

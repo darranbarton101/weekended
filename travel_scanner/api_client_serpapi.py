@@ -212,6 +212,7 @@ def _call_serpapi(
     max_retries: int = 3,
     backoff_base: int = 2,
     force_refresh: bool = False,
+    on_retry: Callable[[str], None] | None = None,
 ) -> tuple[list[dict], bool]:
     """Make a SerpAPI call with retry/backoff and 24h caching.
 
@@ -256,6 +257,8 @@ def _call_serpapi(
             elif resp.status_code == 429:
                 wait = backoff_base ** (attempt + 2)
                 logger.warning("SerpAPI rate limited. Waiting %ds", wait)
+                if on_retry:
+                    on_retry(f"↻ SerpAPI rate limited — waiting {wait}s (attempt {attempt + 1}/{max_retries})")
                 time.sleep(wait)
 
             elif resp.status_code == 401:
@@ -269,6 +272,8 @@ def _call_serpapi(
         except RequestException as exc:
             wait = backoff_base ** (attempt + 1)
             logger.warning("SerpAPI network error: %s. Retry in %ds", exc, wait)
+            if on_retry:
+                on_retry(f"↻ SerpAPI timeout — retrying in {wait}s (attempt {attempt + 1}/{max_retries})")
             time.sleep(wait)
 
     logger.error("SerpAPI max retries exceeded.")

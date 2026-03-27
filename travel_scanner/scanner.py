@@ -13,6 +13,7 @@ import logging
 import logging.handlers
 import os
 import time
+import uuid
 from typing import Callable, Generator
 
 import yaml
@@ -27,7 +28,7 @@ from .api_client_serpapi import (
 )
 from .date_windows import generate_windows, get_departure_return_pairs
 from .deal_filter import deduplicate, score_and_rank
-from .deal_store import cleanup_stale, get_connection, load_deals, upsert_deals
+from .deal_store import cleanup_old_scans, cleanup_stale, get_connection, load_deals, upsert_deals
 from .models import FRI, SUN, THU, Deal, ScanParams
 
 logger = logging.getLogger(__name__)
@@ -128,9 +129,11 @@ def run_scan_streaming(
     )
     total_steps = max(serp_calls + ryanair_pairs, 1)
 
+    scan_id = str(uuid.uuid4())[:8]   # short ID tags this scan's DB rows
     raw_deals: list[Deal] = []
     step = 0
     seen_dest_dates: set[str] = set()  # dedup across SerpAPI calls
+    _retry_msgs: list[str] = []        # collect retry messages between yields
 
     # Only filter Ryanair from SerpAPI when Ryanair primary is also running
     filter_ryanair = params.use_ryanair
@@ -138,6 +141,14 @@ def run_scan_streaming(
 
     def _snapshot() -> list[Deal]:
         return score_and_rank(deduplicate(raw_deals[:]), params)
+
+    def _pop_retry_prefix(base_msg: str) -> str:
+        """Prepend any pending retry messages then clear the list."""
+        if _retry_msgs:
+            prefix = " · ".join(_retry_msgs)
+            _retry_msgs.clear()
+            return f"{prefix} · {base_msg}"
+        return base_msg
 
     for window in windows:
         for origin in params.origins:
@@ -163,6 +174,7 @@ def run_scan_streaming(
 
                     raw_results, was_cached = _call_serpapi(
                         api_params, api_key, force_refresh=force_refresh,
+                        on_retry=_retry_msgs.append,
                     )
 
                     batch_count = 0
@@ -184,13 +196,10 @@ def run_scan_streaming(
                         batch_count += 1
 
                     cache_tag = " [cached]" if was_cached else ""
-                    yield (
-                        _snapshot(),
-                        (f"SerpAPI {origin} "
-                         f"{out_date.strftime('%d %b')} → {ret_date.strftime('%d %b')} "
-                         f"— {batch_count} deals{cache_tag}"),
-                        step, total_steps,
-                    )
+                    _msg = (f"SerpAPI {origin} "
+                            f"{out_date.strftime('%d %b')} → {ret_date.strftime('%d %b')} "
+                            f"— {batch_count} deals{cache_tag}")
+                    yield _snapshot(), _pop_retry_prefix(_msg), step, total_steps
 
                     # Only pause between live API calls — cache hits are instant
                     if not was_cached and pair_idx < len(date_pairs) - 1:
@@ -201,36 +210,37 @@ def run_scan_streaming(
                 pairs = get_departure_return_pairs(window, params)
                 for i, (out_date, ret_date) in enumerate(pairs):
                     step += 1
-                    fares = _call_ryanair(origin, out_date, ret_date, params)
+                    fares = _call_ryanair(origin, out_date, ret_date, params,
+                                         on_retry=_retry_msgs.append)
                     batch = [
                         d for fare in fares
                         if (d := _parse_fare(fare, origin, out_date, ret_date, window.label, params))
                         and params.min_price_gbp <= d.price_gbp <= params.max_price_gbp
                     ]
                     raw_deals.extend(batch)
-                    yield (
-                        _snapshot(),
-                        (f"Ryanair {origin} "
-                         f"{out_date.strftime('%d %b')} → {ret_date.strftime('%d %b')} "
-                         f"({i + 1}/{len(pairs)}) — {len(batch)} deals"),
-                        step, total_steps,
-                    )
+                    _msg = (f"Ryanair {origin} "
+                            f"{out_date.strftime('%d %b')} → {ret_date.strftime('%d %b')} "
+                            f"({i + 1}/{len(pairs)}) — {len(batch)} deals")
+                    yield _snapshot(), _pop_retry_prefix(_msg), step, total_steps
                     if i < len(pairs) - 1:
                         time.sleep(ryanair_delay)
 
-    # Save and yield final DB view
+    # Save to DB, delete old scans, reload — all after scan completes so
+    # concurrent visitors always see the previous scan's results, never empty.
     final = score_and_rank(deduplicate(raw_deals), params)
-    conn  = get_connection(db_path)
-    new_count, updated_count = upsert_deals(conn, final)
-    cleanup_stale(conn, config.get("database", {}).get("stale_after_days", 30))
-    all_deals = load_deals(conn)
-    # conn.close()  # Supabase client doesn't need closing
+    try:
+        conn = get_connection(db_path)
+        new_count, updated_count = upsert_deals(conn, final, scan_id=scan_id)
+        cleanup_old_scans(conn, keep_scan_id=scan_id)
+        cleanup_stale(conn, config.get("database", {}).get("stale_after_days", 30))
+        all_deals = load_deals(conn)
+        completion_msg = f"Complete — {new_count} new, {updated_count} updated"
+    except Exception as exc:
+        logger.error("DB operations failed after scan: %s", exc)
+        all_deals = final   # fall back to in-memory results
+        completion_msg = f"Complete (DB error: {exc}) — showing in-memory results"
 
-    yield (
-        all_deals,
-        f"Complete — {new_count} new deals, {updated_count} updated",
-        total_steps, total_steps,
-    )
+    yield all_deals, completion_msg, total_steps, total_steps
 
 
 # ── Blocking wrapper (background cron) ───────────────────────────────────────

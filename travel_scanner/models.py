@@ -32,6 +32,7 @@ class Deal:
     first_seen: datetime = field(default_factory=datetime.utcnow)
     last_seen: datetime = field(default_factory=datetime.utcnow)
     notified: bool = False
+    scan_id: str = ""
 
 
 @dataclass
