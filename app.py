@@ -712,14 +712,15 @@ def _fetch_serpapi_credits(api_key: str) -> dict | None:
 
 _serp_key_hdr = os.environ.get("SERPAPI_KEY", "")
 _serp_credit_html = ""
+_serp_credits_remaining = None  # Track for rate limiting
 if _serp_key_hdr:
     _credit_data = _fetch_serpapi_credits(_serp_key_hdr)
     if _credit_data:
-        # Calculate from this_month_searches against known 250/month limit
         _used = _credit_data.get("this_month_searches",
                 _credit_data.get("total_searches_used", 0))
-        _limit = 250  # known monthly plan limit
+        _limit = 250
         _remaining = max(_limit - _used, 0)
+        _serp_credits_remaining = _remaining
         _pct = (1 - _remaining / _limit) * 100
         if _remaining <= 10:
             _credit_colour = "#ff0000"
@@ -733,6 +734,11 @@ if _serp_key_hdr:
         _serp_credit_html = (
             f"<span style='color:{_credit_colour};font-weight:700'>{_credit_label}</span>"
         )
+        # Prominent warning when credits critically low
+        if _remaining <= 20 and _remaining > 0:
+            st.warning(f"⚠ SerpAPI credits running low: {_remaining}/250 remaining this month")
+        elif _remaining == 0:
+            st.error("🚫 SerpAPI credits exhausted for this month. Searches will use cached results only.")
     else:
         _serp_credit_html = "<span style='color:#ff8c00'>⚠ SERPAPI: could not verify credits</span>"
 
@@ -1109,15 +1115,34 @@ def _group_destinations(deals_list):
 
 # ── Run search ───────────────────────────────────────────────────────────────
 
-# Step 1: When search button clicked, close panel, set flag and rerun
+# ── Rate limiting — 15-min cooldown per user ─────────────────────────────────
+_SCAN_COOLDOWN_MINUTES = 15
+
+def _check_rate_limit() -> tuple[bool, int]:
+    """Check if user can scan. Returns (allowed, seconds_remaining)."""
+    last_scan = st.session_state.get("_last_scan_ts")
+    if last_scan:
+        elapsed = (datetime.now() - last_scan).total_seconds()
+        remaining = _SCAN_COOLDOWN_MINUTES * 60 - elapsed
+        if remaining > 0:
+            return False, int(remaining)
+    return True, 0
+
+# Step 1: When search button clicked, check rate limit, close panel, set flag and rerun
 if run_search:
-    st.session_state["_run_search"] = True
-    st.session_state["search_open"] = False
-    st.session_state.pop("deals", None)
-    st.session_state.pop("last_log", None)
-    st.session_state["selected_dest"] = None
-    # Clean slate for new search
-    st.rerun()
+    _allowed, _wait_secs = _check_rate_limit()
+    if not _allowed:
+        _wait_mins = _wait_secs // 60
+        _wait_s = _wait_secs % 60
+        st.warning(f"Please wait {_wait_mins}m {_wait_s}s before scanning again (limit: 1 scan per {_SCAN_COOLDOWN_MINUTES} mins)")
+    else:
+        st.session_state["_last_scan_ts"] = datetime.now()
+        st.session_state["_run_search"] = True
+        st.session_state["search_open"] = False
+        st.session_state.pop("deals", None)
+        st.session_state.pop("last_log", None)
+        st.session_state["selected_dest"] = None
+        st.rerun()
 
 # Step 2: On rerun, expander is collapsed and we execute the actual scan
 if _is_searching:

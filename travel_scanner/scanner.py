@@ -28,7 +28,7 @@ from .api_client_serpapi import (
 )
 from .date_windows import generate_windows, get_departure_return_pairs
 from .deal_filter import deduplicate, score_and_rank
-from .deal_store import cleanup_old_scans, cleanup_stale, get_connection, load_deals, upsert_deals
+from .deal_store import cleanup_stale, get_connection, load_deals, upsert_deals
 from .models import FRI, SUN, THU, Deal, ScanParams
 
 logger = logging.getLogger(__name__)
@@ -231,7 +231,7 @@ def run_scan_streaming(
     try:
         conn = get_connection(db_path)
         new_count, updated_count = upsert_deals(conn, final, scan_id=scan_id)
-        cleanup_old_scans(conn, keep_scan_id=scan_id)
+        # cleanup_old_scans removed — all users' deals coexist; only stale cleanup
         cleanup_stale(conn, config.get("database", {}).get("stale_after_days", 30))
         all_deals = load_deals(conn)
         completion_msg = f"Complete — {new_count} new, {updated_count} updated"

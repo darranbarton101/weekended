@@ -27,14 +27,68 @@ from .models import Deal, ScanParams, SearchWindow
 
 logger = logging.getLogger(__name__)
 
-# ── SerpAPI response cache ───────────────────────────────────────────────────
-CACHE_DIR = Path("data")
-CACHE_FILE = CACHE_DIR / "serpapi_cache.json"
+# ── SerpAPI response cache (Supabase-backed, shared across all users) ────────
 CACHE_TTL_HOURS = 24
 
+# Lazy Supabase client for cache — avoids import-time env var requirement
+_cache_conn = None
 
-def _load_cache() -> dict:
-    """Load the cache file, returning {key: {response, timestamp}}."""
+
+def _get_cache_conn():
+    """Get or create Supabase client for cache operations."""
+    global _cache_conn
+    if _cache_conn is None:
+        try:
+            from .deal_store import get_connection
+            _cache_conn = get_connection()
+        except Exception:
+            pass
+    return _cache_conn
+
+
+def _cache_get(key: str) -> list[dict] | None:
+    """Return cached results from Supabase if fresh, else None."""
+    conn = _get_cache_conn()
+    if not conn:
+        return _cache_get_file(key)  # fallback to file cache
+    try:
+        resp = conn.table("api_cache").select("data,cached_at").eq("cache_key", key).execute()
+        if resp.data:
+            row = resp.data[0]
+            cached_at = datetime.fromisoformat(row["cached_at"])
+            age_hours = (datetime.utcnow() - cached_at.replace(tzinfo=None)).total_seconds() / 3600
+            if age_hours < CACHE_TTL_HOURS:
+                logger.info("SerpAPI cache hit: %s (%.1fh old)", key[:40], age_hours)
+                return json.loads(row["data"]) if isinstance(row["data"], str) else row["data"]
+    except Exception as exc:
+        logger.debug("Supabase cache read failed: %s — falling back to file", exc)
+        return _cache_get_file(key)
+    return None
+
+
+def _cache_put(key: str, data: list[dict]) -> None:
+    """Store results in Supabase cache (shared across all users)."""
+    conn = _get_cache_conn()
+    if not conn:
+        _cache_put_file(key, data)
+        return
+    try:
+        conn.table("api_cache").upsert({
+            "cache_key": key,
+            "data": json.dumps(data),
+            "cached_at": datetime.utcnow().isoformat(),
+        }).execute()
+    except Exception as exc:
+        logger.debug("Supabase cache write failed: %s — falling back to file", exc)
+        _cache_put_file(key, data)
+
+
+# ── File-based fallback (used if Supabase is unavailable) ────────────────────
+CACHE_DIR = Path("data")
+CACHE_FILE = CACHE_DIR / "serpapi_cache.json"
+
+
+def _load_file_cache() -> dict:
     try:
         if CACHE_FILE.exists():
             return json.loads(CACHE_FILE.read_text())
@@ -43,36 +97,25 @@ def _load_cache() -> dict:
     return {}
 
 
-def _save_cache(cache: dict) -> None:
-    """Write cache dict to disk."""
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    CACHE_FILE.write_text(json.dumps(cache))
-
-
-def _cache_get(key: str) -> list[dict] | None:
-    """Return cached results if fresh, else None."""
-    cache = _load_cache()
+def _cache_get_file(key: str) -> list[dict] | None:
+    cache = _load_file_cache()
     entry = cache.get(key)
     if entry:
         cached_at = datetime.fromisoformat(entry["ts"])
         age_hours = (datetime.utcnow() - cached_at).total_seconds() / 3600
         if age_hours < CACHE_TTL_HOURS:
-            logger.info("SerpAPI cache hit: %s (%.1fh old)", key, age_hours)
+            logger.info("SerpAPI file cache hit: %s (%.1fh old)", key[:40], age_hours)
             return entry["data"]
     return None
 
 
-def _cache_put(key: str, data: list[dict]) -> None:
-    """Store results in cache."""
-    cache = _load_cache()
+def _cache_put_file(key: str, data: list[dict]) -> None:
+    cache = _load_file_cache()
     cache[key] = {"data": data, "ts": datetime.utcnow().isoformat()}
-    # Prune entries older than TTL
     cutoff = datetime.utcnow() - timedelta(hours=CACHE_TTL_HOURS)
-    cache = {
-        k: v for k, v in cache.items()
-        if datetime.fromisoformat(v["ts"]) > cutoff
-    }
-    _save_cache(cache)
+    cache = {k: v for k, v in cache.items() if datetime.fromisoformat(v["ts"]) > cutoff}
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    CACHE_FILE.write_text(json.dumps(cache))
 
 SERPAPI_BASE = "https://serpapi.com/search"
 # Skyscanner search URL — lowercase IATA codes, dates in YYMMDD (e.g. 260417)
