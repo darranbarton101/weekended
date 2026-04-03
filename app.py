@@ -535,7 +535,11 @@ st.markdown(f"""
         margin: 6px 0;
     }}
 
-    /* ── Larger dropdown items for touch ── */
+    /* ── Dropdown: limit height so fewer options show, best match stays close ── */
+    [data-baseweb="popover"] [data-baseweb="menu"],
+    [data-baseweb="popover"] ul {{
+        max-height: 160px !important;
+    }}
     [data-baseweb="popover"] li,
     [data-baseweb="menu"] li {{
         padding: 12px 14px !important;
@@ -774,58 +778,20 @@ if st.button(_toggle_label, key="search_toggle", use_container_width=True):
 _show_search = st.session_state["search_open"] and not _is_searching
 
 if _show_search:
-    # ── Row A: Airport — custom search with results BELOW input ──
+    # ── Row A: Airport — full width ──
     st.caption("DEPARTING FROM")
-
-    # Initialise selected airports from prefs
-    if "_selected_airports" not in st.session_state:
-        st.session_state["_selected_airports"] = _saved_prefs.get("airports", [])
-
-    # Show selected airports as removable tags
-    _sel_airports = st.session_state["_selected_airports"]
-    if _sel_airports:
-        _tag_html = " ".join(
-            f'<span style="display:inline-block;background:#4a5bcc;color:#fff;'
-            f'font-family:Arial,sans-serif;font-size:0.72rem;padding:4px 8px;'
-            f'margin:0 4px 4px 0">{AIRPORT_OPTIONS.get(c, c)}</span>'
-            for c in _sel_airports
-        )
-        st.markdown(_tag_html, unsafe_allow_html=True)
-        # Remove buttons
-        _rem_cols = st.columns(len(_sel_airports))
-        for _ri, (_rc, _code) in enumerate(zip(_rem_cols, list(_sel_airports))):
-            with _rc:
-                if st.button(f"✕ {_code}", key=f"rem_{_code}", use_container_width=True):
-                    st.session_state["_selected_airports"].remove(_code)
-                    st.rerun()
-
-    # Search input — only show if under 3 airports
-    if len(_sel_airports) < 3:
-        _airport_query = st.text_input(
-            "Search airports",
-            value="",
-            placeholder="Type airport name or code…",
-            label_visibility="collapsed",
-            key="_airport_search",
-        )
-
-        # Filter and show matching airports BELOW the input
-        if _airport_query and len(_airport_query) >= 2:
-            _q = _airport_query.lower()
-            _matches = [
-                (code, label) for code, label in AIRPORT_OPTIONS.items()
-                if _q in label.lower() or _q in code.lower()
-                and code not in _sel_airports
-            ][:6]  # Show top 6 matches
-
-            if _matches:
-                for _code, _label in _matches:
-                    if _code not in _sel_airports:
-                        if st.button(f"  {_label}", key=f"add_{_code}", use_container_width=True):
-                            st.session_state["_selected_airports"].append(_code)
-                            st.rerun()
-
-    origins = _sel_airports if _sel_airports else ["GLA"]
+    if "_ms_airports" not in st.session_state:
+        st.session_state["_ms_airports"] = _saved_prefs.get("airports", [])
+    selected_airports = st.multiselect(
+        "airports",
+        options=list(AIRPORT_OPTIONS.keys()),
+        key="_ms_airports",
+        format_func=lambda x: AIRPORT_OPTIONS.get(x, x),
+        label_visibility="collapsed",
+        max_selections=3,
+        placeholder="Select up to 3 departure airports…",
+    )
+    origins = selected_airports or ["GLA"]
 
     # ── Row B: Sliders — 2 columns ──
     rb1, rb2 = st.columns(2)
