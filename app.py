@@ -30,6 +30,7 @@ for _key in ("SERPAPI_KEY", "SUPABASE_URL", "SUPABASE_KEY"):
 
 # enrich_flight_times removed — simplified UI
 from travel_scanner.deal_store import get_connection, load_deals, mark_notified, get_user_prefs, save_user_prefs, subscribe_email, get_subscriber
+from travel_scanner.email_service import send_welcome_email
 from travel_scanner.models import DAY_NAMES, DAY_SHORT, ScanParams
 from travel_scanner.scanner import load_config, run_scan_streaming
 
@@ -1742,6 +1743,8 @@ else:
                 )
                 if _ok:
                     st.success(_msg)
+                    # Send welcome email (non-blocking — don't fail signup if email fails)
+                    send_welcome_email(_sub_email)
                     st.rerun()
                 else:
                     st.error(_msg)
@@ -1763,7 +1766,7 @@ with st.expander("Privacy Policy"):
         "<b>Unsubscribe:</b> Every email includes a one-click unsubscribe link. "
         "You can also email us to request complete deletion of your data.<br><br>"
         "<b>Your rights (GDPR):</b> You have the right to access, correct, or delete "
-        "your personal data at any time. Contact weekended@brightsignals.com for any requests."
+        "your personal data at any time. Contact darranbarton101@gmail.com for any requests."
         "</div>",
         unsafe_allow_html=True,
     )
