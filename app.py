@@ -535,13 +535,7 @@ st.markdown(f"""
         margin: 6px 0;
     }}
 
-    /* ── Force multiselect dropdown below input ── */
-    [data-baseweb="popover"] {{
-        top: 100% !important;
-        bottom: auto !important;
-        transform: none !important;
-    }}
-    /* Larger dropdown items for touch */
+    /* ── Larger dropdown items for touch ── */
     [data-baseweb="popover"] li,
     [data-baseweb="menu"] li {{
         padding: 12px 14px !important;
@@ -780,23 +774,7 @@ if st.button(_toggle_label, key="search_toggle", use_container_width=True):
 _show_search = st.session_state["search_open"] and not _is_searching
 
 if _show_search:
-    # ── Row A: Airport — full width ──
-    st.caption("DEPARTING FROM")
-    # Airports loaded from per-user Supabase prefs (safe — keyed by UID)
-    if "_ms_airports" not in st.session_state:
-        st.session_state["_ms_airports"] = _saved_prefs.get("airports", [])
-    selected_airports = st.multiselect(
-        "airports",
-        options=list(AIRPORT_OPTIONS.keys()),
-        key="_ms_airports",
-        format_func=lambda x: AIRPORT_OPTIONS.get(x, x),
-        label_visibility="collapsed",
-        max_selections=3,
-        placeholder="Select up to 3 departure airports…",
-    )
-    origins = selected_airports or ["GLA"]
-
-    # ── Row B: Sliders — 2 columns so each has room ──
+    # ── Row A: Sliders — 2 columns ──
     rb1, rb2 = st.columns(2)
     with rb1:
         st.caption("MONTHS AHEAD")
@@ -811,11 +789,10 @@ if _show_search:
             format="£%d", label_visibility="collapsed",
         )
 
-    # ── Row C: Stops — full width selectbox (safe on mobile) ──
+    # ── Row B: Stops — full width selectbox ──
     st.caption("STOPS")
     _stops_opts = ["Any", "Direct only", "Max 1 stop"]
     _pref_stops = _saved_prefs.get("stops", "Any")
-    # Map old "Direct"/"1 stop" prefs to new labels
     _stops_compat = {"Direct": "Direct only", "1 stop": "Max 1 stop", "Any": "Any"}
     _pref_stops_mapped = _stops_compat.get(_pref_stops, "Any")
     _stops_idx = _stops_opts.index(_pref_stops_mapped) if _pref_stops_mapped in _stops_opts else 0
@@ -824,7 +801,7 @@ if _show_search:
     )
     max_stopovers = {"Any": 2, "Direct only": 0, "Max 1 stop": 1}[stops_label]
 
-    # ── Row D: Day pickers — 2 columns ──
+    # ── Row C: Day pickers — 2 columns ──
     _day_options = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     _day_to_idx = {name: i for i, name in enumerate(_day_options)}
 
@@ -865,6 +842,21 @@ if _show_search:
         if not return_days:
             return_days[6] = ("00:00", "23:59")
         st.caption("💡 Add Mon to catch early morning return flights")
+
+    # ── Row D: Airport — moved near bottom so dropdown opens upward into form area ──
+    st.caption("DEPARTING FROM")
+    if "_ms_airports" not in st.session_state:
+        st.session_state["_ms_airports"] = _saved_prefs.get("airports", [])
+    selected_airports = st.multiselect(
+        "airports",
+        options=list(AIRPORT_OPTIONS.keys()),
+        key="_ms_airports",
+        format_func=lambda x: AIRPORT_OPTIONS.get(x, x),
+        label_visibility="collapsed",
+        max_selections=3,
+        placeholder="Select up to 3 departure airports…",
+    )
+    origins = selected_airports or ["GLA"]
 
     # ── Row E: Search button — full width ──
     serpapi_key = os.environ.get("SERPAPI_KEY", "")
