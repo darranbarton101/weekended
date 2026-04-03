@@ -486,25 +486,6 @@ st.markdown(f"""
     a {{ color: {_NAVY} !important; }}
     a:hover {{ color: {_SELECTED} !important; text-decoration: underline; }}
 
-    /* ── Header bar (amber title bar style) ── */
-    .header-bar {{
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 4px 8px;
-        background: {_TITLE_GRAD};
-        margin-bottom: 10px;
-        {_RAISED}
-    }}
-    .header-bar span {{
-        color: {_BLACK};
-        font-family: 'MS Sans Serif', Arial, sans-serif;
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0;
-        text-shadow: 0 1px 0 rgba(255,255,255,0.5);
-    }}
-
     /* ── Popover button ── */
     [data-testid="stPopoverButton"] > button {{
         background-color: {_BG} !important; color: {_BLACK} !important;
@@ -552,6 +533,50 @@ st.markdown(f"""
         border-top: 1px solid {_BG_DARK};
         border-bottom: 1px solid {_WHITE};
         margin: 6px 0;
+    }}
+
+    /* ── Mobile responsive ── */
+    @media (max-width: 768px) {{
+        .main .block-container {{
+            padding-left: 0.8rem !important;
+            padding-right: 0.8rem !important;
+            margin-top: 0.5rem !important;
+        }}
+        h1 {{
+            font-size: 2rem !important;
+        }}
+        /* Make multiselect / selectbox touch-friendly */
+        .stSelectbox > div > div,
+        .stMultiSelect > div > div {{
+            min-height: 44px !important;
+            font-size: 0.85rem !important;
+        }}
+        .stMultiSelect [data-baseweb="popover"] li {{
+            padding: 10px 12px !important;
+            font-size: 0.85rem !important;
+        }}
+        /* Bigger touch targets for buttons */
+        .stButton > button {{
+            min-height: 44px !important;
+            font-size: 0.82rem !important;
+        }}
+    }}
+
+    /* Destination grid — CSS grid via HTML */
+    .dest-grid {{
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }}
+    @media (max-width: 768px) {{
+        .dest-grid {{
+            grid-template-columns: repeat(2, 1fr);
+        }}
+    }}
+    @media (max-width: 420px) {{
+        .dest-grid {{
+            grid-template-columns: 1fr;
+        }}
     }}
 
 </style>
@@ -703,13 +728,16 @@ if _serp_key_hdr:
     else:
         _serp_credit_html = "<span style='color:#ff8c00'>⚠ SERPAPI: could not verify credits</span>"
 
-st.markdown(
-    f"""<div class="header-bar">
-        <span>Last scan: {_last_scan_str if _last_scan_str else 'N/A'}</span>
-        {f'<span>{_serp_credit_html}</span>' if _serp_credit_html else ''}
-        <span>{_now_str} · V.018</span>
-    </div>""",
-    unsafe_allow_html=True,
+# Header bar moved to footer — stored for later
+_header_bar_html = (
+    f"""<div style="display:flex;align-items:center;justify-content:center;gap:16px;
+    padding:6px 8px;margin-top:4px;opacity:0.5">
+        <span style="font-family:Arial,sans-serif;font-size:0.55rem;color:#9898b8;
+        letter-spacing:0.08em">Last scan: {_last_scan_str if _last_scan_str else 'N/A'}</span>
+        {f'<span style="font-family:Arial,sans-serif;font-size:0.55rem">{_serp_credit_html}</span>' if _serp_credit_html else ''}
+        <span style="font-family:Arial,sans-serif;font-size:0.55rem;color:#9898b8;
+        letter-spacing:0.08em">{_now_str} · V.019</span>
+    </div>"""
 )
 
 # ── Search panel ─────────────────────────────────────────────────────────────
@@ -839,12 +867,8 @@ if _show_search:
     serpapi_key = os.environ.get("SERPAPI_KEY", "")
     use_serpapi_ui = bool(serpapi_key)
     use_ryanair_ui = False
-    st.write("")
+    force_refresh_ui = False
     run_search = st.button("🔍 Search", type="primary", use_container_width=True)
-
-    # Advanced options — hidden by default, not cluttering main form
-    with st.expander("⚙ Advanced"):
-        force_refresh_ui = st.checkbox("Force refresh (bypass cache)", value=False, key="force_refresh")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -877,7 +901,6 @@ if _show_search:
     st.session_state["_last_max_stopovers"] = max_stopovers
     st.session_state["_last_dep_days"] = departure_days
     st.session_state["_last_ret_days"] = return_days
-    st.session_state["_force_refresh"] = force_refresh_ui
 
     # Persist all prefs per-user via Supabase (airports now safe to save — keyed by UID)
     _stopovers_to_label = {0: "Direct", 1: "1 stop", 2: "Any"}
@@ -997,7 +1020,7 @@ def _col_config() -> dict:
 
 
 def _render_live_deals_html(deals_list) -> str:
-    """Render live deals as styled HTML for scanning progress."""
+    """Render live deals as a marquee-style ticker within a contained box."""
     groups = {}
     for d in deals_list:
         key = d.destination_city or d.destination
@@ -1009,34 +1032,47 @@ def _render_live_deals_html(deals_list) -> str:
             groups[key]["min_price"] = d.price_gbp
 
     sorted_g = sorted(groups.values(), key=lambda g: g["min_price"])
-    cards = []
-    plural = lambda n: "s" if n != 1 else ""
-    for g in sorted_g[:18]:  # Show top 18
-        cards.append(
-            f'<div style="background:#ffffff;'
+    n_deals = sum(g["count"] for g in sorted_g)
+    n_dests = len(sorted_g)
+
+    # Build inline tags for a ticker
+    tags = []
+    for g in sorted_g[:24]:
+        tags.append(
+            f'<span style="display:inline-block;background:#ffffff;'
             f'box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;'
-            f'padding:6px 10px;min-width:140px;flex:1;opacity:0.75">'
-            f'<div style="background:linear-gradient(to right,#e09010,#f5b835);padding:2px 6px;margin:-6px -10px 5px">'
-            f'<span style="font-weight:700;color:#ffffff;font-family:Arial,sans-serif;'
-            f'font-size:0.68rem">{g["city"].upper()}</span>'
-            f'</div>'
-            f'<div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:2px">'
-            f'<span style="color:#9898b8;font-family:Arial,sans-serif;font-size:0.6rem">{g["country"]}</span>'
-            f'<b style="color:#4a5bcc;font-family:Arial,sans-serif;font-size:0.85rem">£{g["min_price"]:.0f}</b>'
-            f'</div>'
-            f'<div style="color:#9898b8;font-family:Arial,sans-serif;'
-            f'font-size:0.58rem;margin-top:2px">'
-            f'{g["count"]} date{plural(g["count"])}</div>'
-            f'</div>'
+            f'padding:4px 10px;margin:3px 4px;white-space:nowrap;pointer-events:none;user-select:none">'
+            f'<span style="font-weight:700;color:#1a1a4a;font-family:Arial,sans-serif;'
+            f'font-size:0.7rem">{g["city"].upper()}</span>'
+            f'&nbsp;<span style="color:#4a5bcc;font-family:Arial,sans-serif;font-size:0.75rem;'
+            f'font-weight:700">£{g["min_price"]:.0f}</span>'
+            f'&nbsp;<span style="color:#9898b8;font-family:Arial,sans-serif;font-size:0.55rem">'
+            f'{g["country"]}</span>'
+            f'</span>'
         )
 
-    # Arrange in rows of 3
-    rows_html = ""
-    for i in range(0, len(cards), 3):
-        row = cards[i:i+3]
-        rows_html += '<div style="display:flex;gap:6px;margin-bottom:6px">' + "".join(row) + '</div>'
+    tags_html = "".join(tags)
+    # Double the tags for seamless loop
+    ticker_content = tags_html + tags_html
 
-    return rows_html
+    # Speed based on number of items
+    duration = max(12, len(sorted_g) * 2.5)
+
+    return (
+        f'<div style="font-family:Arial,sans-serif;font-size:0.72rem;color:#4a5bcc;'
+        f'letter-spacing:0.08em;margin:6px 0 4px;font-weight:700">'
+        f'{n_deals} DEALS ———— {n_dests} DESTINATIONS</div>'
+        f'<div style="overflow:hidden;max-height:140px;position:relative;'
+        f'box-shadow:inset 1px 1px #2a2a6e,inset -1px -1px #faf0ff,inset 2px 2px #9898b8,inset -2px -2px #ffffff;'
+        f'background:#faf0ff;padding:4px 0;pointer-events:none;user-select:none">'
+        f'<div style="display:flex;flex-wrap:wrap;animation:ticker-scroll {duration}s linear infinite;'
+        f'width:max-content">{ticker_content}</div>'
+        f'</div>'
+        f'<style>@keyframes ticker-scroll {{'
+        f'0% {{ transform: translateX(0); }}'
+        f'100% {{ transform: translateX(-50%); }}'
+        f'}}</style>'
+    )
 
 
 def _group_destinations(deals_list):
@@ -1118,7 +1154,6 @@ if _is_searching:
         )
         progress_bar = st.progress(0.0)
         status_line = st.empty()
-        live_count = st.empty()
         cards_slot = st.empty()
 
         log_handler = _attach_log_capture()
@@ -1126,8 +1161,7 @@ if _is_searching:
         _last_phrase_step = -1
 
         try:
-            _force = st.session_state.get("_force_refresh", False)
-            for _live_deals, msg, step, total in run_scan_streaming(scan_params, config, force_refresh=_force):
+            for _live_deals, msg, step, total in run_scan_streaming(scan_params, config, force_refresh=False):
                 frac = min(step / max(total, 1), 1.0)
                 pct = int(frac * 100)
                 progress_bar.progress(frac)
@@ -1163,14 +1197,6 @@ if _is_searching:
                 )
                 step_log.append(msg)
                 if _live_deals:
-                    n = len(_live_deals)
-                    dests = len({d.destination_city or d.destination for d in _live_deals})
-                    live_count.markdown(
-                        f"<p style='font-family:Arial, sans-serif;font-size:0.75rem;"
-                        f"color:#4a5bcc;letter-spacing:0.08em;margin:4px 0'>"
-                        f"<b>{n}</b> DEALS ———— <b>{dests}</b> DESTINATIONS</p>",
-                        unsafe_allow_html=True,
-                    )
                     cards_slot.markdown(
                         _render_live_deals_html(_live_deals),
                         unsafe_allow_html=True,
@@ -1182,7 +1208,6 @@ if _is_searching:
         route_summary.empty()
         scan_phrase_slot.empty()
         status_line.empty()
-        live_count.empty()
         cards_slot.empty()
 
         errors   = [r for r in log_handler.records if r.levelno >= logging.ERROR]
@@ -1445,14 +1470,7 @@ with tab_all:
         else:
             sorted_groups = sorted(groups.values(), key=lambda g: -g["deal_count"])
 
-        st.markdown(
-            f"<span style='font-family:Arial, sans-serif;font-size:0.7rem;"
-            f"color:#9898b8;letter-spacing:0.1em;text-transform:uppercase'>"
-            f"{len(groups)} destinations ———— {len(filtered)} total options</span>",
-            unsafe_allow_html=True,
-        )
-
-        COLS_PER_ROW = 3
+        COLS_PER_ROW = 2
         for row_start in range(0, len(sorted_groups), COLS_PER_ROW):
             row_groups = sorted_groups[row_start:row_start + COLS_PER_ROW]
             cols = st.columns(COLS_PER_ROW)
@@ -1462,10 +1480,6 @@ with tab_all:
                     country = g["country"]
                     price = g["min_price"]
                     count = g["deal_count"]
-                    airlines = sorted(g["airlines"])
-                    origins_list = sorted(g["origins"])
-                    example_dep = g["example_dep"]
-                    example_nights = g["example_nights"]
                     plural = "s" if count != 1 else ""
                     _date_text = f"<b style='color:#1a1a4a'>{count} date{plural}</b>"
 
@@ -1496,7 +1510,7 @@ with tab_all:
                         unsafe_allow_html=True,
                     )
 
-                    # Action button — full width now globe is inline
+                    # Action button — full width
                     if st.button("View deals", key=f"view_{city}", use_container_width=True):
                         st.session_state["selected_dest"] = city
                         st.rerun()
@@ -1633,3 +1647,5 @@ st.markdown(
     "</div>",
     unsafe_allow_html=True,
 )
+# Scan details at bottom, discreet
+st.markdown(_header_bar_html, unsafe_allow_html=True)
