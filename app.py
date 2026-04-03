@@ -535,11 +535,6 @@ st.markdown(f"""
         margin: 6px 0;
     }}
 
-    /* ── Hide "max selections" message unless user tries to add more ── */
-    .stMultiSelect [data-baseweb="tag"] + div[data-baseweb="input"] input::placeholder {{
-        color: transparent !important;
-    }}
-
     /* ── Dropdown: limit height so fewer options show, best match stays close ── */
     [data-baseweb="popover"] [data-baseweb="menu"],
     [data-baseweb="popover"] ul {{
@@ -784,19 +779,22 @@ _show_search = st.session_state["search_open"] and not _is_searching
 
 if _show_search:
     # ── Row A: Airport — full width ──
-    st.caption("DEPARTING FROM")
+    st.caption("DEPARTING FROM (max 3)")
     if "_ms_airports" not in st.session_state:
         st.session_state["_ms_airports"] = _saved_prefs.get("airports", [])
-    _current_airports = st.session_state.get("_ms_airports", [])
     selected_airports = st.multiselect(
         "airports",
         options=list(AIRPORT_OPTIONS.keys()),
         key="_ms_airports",
         format_func=lambda x: AIRPORT_OPTIONS.get(x, x),
         label_visibility="collapsed",
-        max_selections=3,
-        placeholder="" if len(_current_airports) >= 3 else "Select up to 3 departure airports…",
+        placeholder="Select departure airports…",
     )
+    # Silently enforce max 3 — trim extras without a warning
+    if len(selected_airports) > 3:
+        selected_airports = selected_airports[:3]
+        st.session_state["_ms_airports"] = selected_airports
+        st.rerun()
     origins = selected_airports or ["GLA"]
 
     # ── Row B: Sliders — 2 columns ──
