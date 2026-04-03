@@ -39,6 +39,9 @@ _CURRENCY_SYMBOLS: dict[str, str] = {
     "GBP": "£", "EUR": "€", "USD": "$", "AUD": "A$",
     "CAD": "C$", "CHF": "Fr", "NZD": "NZ$", "DKK": "kr",
     "NOK": "kr", "SEK": "kr", "PLN": "zł", "JPY": "¥",
+    "INR": "₹", "SGD": "S$", "AED": "د.إ", "BRL": "R$",
+    "ZAR": "R", "THB": "฿", "MXN": "MX$", "HKD": "HK$",
+    "TRY": "₺",
 }
 
 
@@ -49,7 +52,8 @@ def _fetch_exchange_rates() -> dict[str, float]:
     try:
         _r = _req.get(
             "https://api.frankfurter.app/latest",
-            params={"from": "GBP", "to": "EUR,USD,AUD,CAD,CHF,NZD,DKK,NOK,SEK,PLN,JPY"},
+            params={"from": "GBP", "to": "EUR,USD,AUD,CAD,CHF,NZD,DKK,NOK,SEK,PLN,JPY,INR,SGD,BRL,ZAR,THB,MXN,HKD,TRY"},
+            # Note: AED not supported by Frankfurter/ECB — shows as GBP
             timeout=5,
         )
         if _r.status_code == 200:
