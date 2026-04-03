@@ -117,6 +117,23 @@ def _cache_put_file(key: str, data: list[dict]) -> None:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     CACHE_FILE.write_text(json.dumps(cache))
 
+def _log_api_call(origin: str, cache_key: str, result_count: int, was_cached: bool) -> None:
+    """Log each API call to Supabase for usage tracking."""
+    conn = _get_cache_conn()
+    if not conn:
+        return
+    try:
+        conn.table("api_usage").insert({
+            "called_at": datetime.utcnow().isoformat(),
+            "origin": origin,
+            "cache_key": cache_key[:80],
+            "result_count": result_count,
+            "was_cached": was_cached,
+        }).execute()
+    except Exception:
+        pass  # non-critical — don't break scans for logging
+
+
 SERPAPI_BASE = "https://serpapi.com/search"
 # Skyscanner search URL — lowercase IATA codes, dates in YYMMDD (e.g. 260417)
 SKYSCANNER_URL = (
@@ -272,9 +289,12 @@ def _call_serpapi(
         f"{params_dict.get('return_times', '')}"
     )
 
+    _origin = params_dict.get("departure_id", "")
+
     if not force_refresh:
         cached = _cache_get(cache_key)
         if cached is not None:
+            _log_api_call(_origin, cache_key, len(cached), was_cached=True)
             return cached, True
 
     params_dict["api_key"] = api_key
@@ -295,6 +315,7 @@ def _call_serpapi(
                 )
                 logger.info("SerpAPI call → %d results", len(results))
                 _cache_put(cache_key, results)
+                _log_api_call(_origin, cache_key, len(results), was_cached=False)
                 return results, False
 
             elif resp.status_code == 429:
