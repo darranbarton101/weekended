@@ -535,6 +535,20 @@ st.markdown(f"""
         margin: 6px 0;
     }}
 
+    /* ── Force multiselect dropdown below input ── */
+    [data-baseweb="popover"] {{
+        top: 100% !important;
+        bottom: auto !important;
+        transform: none !important;
+    }}
+    /* Larger dropdown items for touch */
+    [data-baseweb="popover"] li,
+    [data-baseweb="menu"] li {{
+        padding: 12px 14px !important;
+        font-size: 0.85rem !important;
+        min-height: 44px !important;
+    }}
+
     /* ── Mobile responsive ── */
     @media (max-width: 768px) {{
         .main .block-container {{
@@ -549,10 +563,6 @@ st.markdown(f"""
         .stSelectbox > div > div,
         .stMultiSelect > div > div {{
             min-height: 44px !important;
-            font-size: 0.85rem !important;
-        }}
-        .stMultiSelect [data-baseweb="popover"] li {{
-            padding: 10px 12px !important;
             font-size: 0.85rem !important;
         }}
         /* Bigger touch targets for buttons */
@@ -770,13 +780,6 @@ if st.button(_toggle_label, key="search_toggle", use_container_width=True):
 _show_search = st.session_state["search_open"] and not _is_searching
 
 if _show_search:
-    st.markdown(
-        "<div style='background:#ffffff;"
-        "box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;"
-        "padding:16px 20px 12px;margin-bottom:8px'>",
-        unsafe_allow_html=True,
-    )
-
     # ── Row A: Airport — full width ──
     st.caption("DEPARTING FROM")
     # Airports loaded from per-user Supabase prefs (safe — keyed by UID)
@@ -869,8 +872,6 @@ if _show_search:
     use_ryanair_ui = False
     force_refresh_ui = False
     run_search = st.button("🔍 Search", type="primary", use_container_width=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
 
 else:
     # Search panel hidden — use session state, then saved prefs, then defaults
