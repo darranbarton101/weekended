@@ -1216,20 +1216,33 @@ if _is_searching:
         warnings = [r for r in log_handler.records if r.levelno == logging.WARNING]
         infos    = [r for r in log_handler.records if r.levelno == logging.INFO]
 
-        if errors:
-            st.error(f"{len(errors)} error(s)")
+        # Separate API errors (real failures) from DB errors (non-fatal)
+        _api_errors = [r for r in errors if "DB " not in r.getMessage() and "upsert" not in r.getMessage()
+                       and "cleanup" not in r.getMessage() and "mark_notified" not in r.getMessage()
+                       and "load_deals" not in r.getMessage()]
+        _db_errors = [r for r in errors if r not in _api_errors]
+
+        if _api_errors:
+            st.error(f"{len(_api_errors)} error(s) — some routes may be missing")
+        elif _db_errors:
+            st.warning(f"Scan complete — {len(_db_errors)} database warning(s)")
         elif warnings:
             st.warning(f"{len(warnings)} warning(s)")
         else:
             st.success(f"Done — {len(infos)} API calls")
 
-        with st.expander("Search log", expanded=bool(errors or warnings)):
+        with st.expander("Search log", expanded=bool(_api_errors)):
             for line in step_log:
                 st.markdown(f"`{line}`")
+            if errors:
+                st.markdown("---")
+                for r in errors:
+                    st.markdown(f"`⚠ {r.name}: {r.getMessage()}`")
 
         st.session_state["last_log"] = {
             "step_log": step_log,
-            "errors":   [(r.name, r.getMessage()) for r in errors],
+            "errors":   [(r.name, r.getMessage()) for r in _api_errors],
+            "db_errors": [(r.name, r.getMessage()) for r in _db_errors],
             "warnings": [(r.name, r.getMessage()) for r in warnings],
             "infos":    len(infos),
         }
@@ -1281,8 +1294,8 @@ with tab_all:
             )
         else:
             _searched = "last_log" in st.session_state
-            _had_errors = _searched and bool(st.session_state["last_log"].get("errors"))
-            if _had_errors:
+            _had_api_errors = _searched and bool(st.session_state["last_log"].get("errors"))
+            if _had_api_errors:
                 _empty_msg = "⚠ SEARCH FAILED — SEE LOG BELOW"
                 _empty_col = "#cc3300"
             elif _searched:
@@ -1317,17 +1330,22 @@ with tab_all:
     if "last_log" in st.session_state:
         log = st.session_state["last_log"]
         errors_saved = log.get("errors", [])
+        db_errors_saved = log.get("db_errors", [])
         warnings_saved = log.get("warnings", [])
         step_log_saved = log.get("step_log", [])
 
         if errors_saved:
-            st.error(f"Last search: {len(errors_saved)} error(s)")
-        elif warnings_saved:
-            st.warning(f"{len(warnings_saved)} warning(s)")
+            st.error(f"Last search: {len(errors_saved)} error(s) — some routes may be missing")
+        elif db_errors_saved:
+            st.warning(f"Last search complete — {len(db_errors_saved)} database warning(s)")
 
         with st.expander("[ Search Log ]", expanded=bool(errors_saved)):
             for line in step_log_saved:
                 st.markdown(f"`{line}`")
+            if errors_saved or db_errors_saved:
+                st.markdown("---")
+                for name, msg in errors_saved + db_errors_saved:
+                    st.markdown(f"`⚠ {name}: {msg}`")
 
     # ── DETAIL VIEW ──────────────────────────────────────────────────────────
 
