@@ -535,6 +535,11 @@ st.markdown(f"""
         margin: 6px 0;
     }}
 
+    /* ── Hide "max selections" message unless user tries to add more ── */
+    .stMultiSelect [data-baseweb="tag"] + div[data-baseweb="input"] input::placeholder {{
+        color: transparent !important;
+    }}
+
     /* ── Dropdown: limit height so fewer options show, best match stays close ── */
     [data-baseweb="popover"] [data-baseweb="menu"],
     [data-baseweb="popover"] ul {{
@@ -759,16 +764,16 @@ _is_searching = st.session_state.get("_run_search", False)
 _last_origins_ss = st.session_state.get("_last_origins", [])
 _last_months_ss  = st.session_state.get("_last_month_range", (1, 6))
 _last_price_ss   = st.session_state.get("_last_max_price", 300)
-_last_stops_ss   = st.session_state.get("_last_max_stopovers", 2)
+_last_stops_ss   = st.session_state.get("_last_max_stopovers", 0)
 _origins_str = ", ".join(_last_origins_ss) if _last_origins_ss else "—"
 _months_str  = f"{_last_months_ss[0]}–{_last_months_ss[1]} months"
 _price_str   = f"£{_last_price_ss}"
 _stops_str   = {0: "Direct only", 1: "Max 1 stop", 2: "Any stops"}[_last_stops_ss]
 
 if st.session_state["search_open"]:
-    _toggle_label = "✈ Search Flights ▲"
+    _toggle_label = "✈ Search Flights ▼"
 else:
-    _toggle_label = f"✈ {_origins_str} · {_months_str} · {_price_str} · {_stops_str} ▼"
+    _toggle_label = f"✈ {_origins_str} · {_months_str} · {_price_str} · {_stops_str} ▲"
 
 if st.button(_toggle_label, key="search_toggle", use_container_width=True):
     st.session_state["search_open"] = not st.session_state["search_open"]
@@ -782,6 +787,7 @@ if _show_search:
     st.caption("DEPARTING FROM")
     if "_ms_airports" not in st.session_state:
         st.session_state["_ms_airports"] = _saved_prefs.get("airports", [])
+    _current_airports = st.session_state.get("_ms_airports", [])
     selected_airports = st.multiselect(
         "airports",
         options=list(AIRPORT_OPTIONS.keys()),
@@ -789,7 +795,7 @@ if _show_search:
         format_func=lambda x: AIRPORT_OPTIONS.get(x, x),
         label_visibility="collapsed",
         max_selections=3,
-        placeholder="Select up to 3 departure airports…",
+        placeholder="" if len(_current_airports) >= 3 else "Select up to 3 departure airports…",
     )
     origins = selected_airports or ["GLA"]
 
@@ -808,15 +814,16 @@ if _show_search:
             format="£%d", label_visibility="collapsed",
         )
 
-    # ── Row C: Stops — full width selectbox ──
+    # ── Row C: Stops — radio buttons, default Direct only ──
     st.caption("STOPS")
-    _stops_opts = ["Any", "Direct only", "Max 1 stop"]
-    _pref_stops = _saved_prefs.get("stops", "Any")
+    _stops_opts = ["Direct only", "Max 1 stop", "Any"]
+    _pref_stops = _saved_prefs.get("stops", "Direct only")
     _stops_compat = {"Direct": "Direct only", "1 stop": "Max 1 stop", "Any": "Any"}
-    _pref_stops_mapped = _stops_compat.get(_pref_stops, "Any")
+    _pref_stops_mapped = _stops_compat.get(_pref_stops, "Direct only")
     _stops_idx = _stops_opts.index(_pref_stops_mapped) if _pref_stops_mapped in _stops_opts else 0
-    stops_label = st.selectbox(
+    stops_label = st.radio(
         "Stops", _stops_opts, index=_stops_idx, label_visibility="collapsed",
+        horizontal=True,
     )
     max_stopovers = {"Any": 2, "Direct only": 0, "Max 1 stop": 1}[stops_label]
 
@@ -876,7 +883,7 @@ else:
     month_range = st.session_state.get("_last_month_range", tuple(_saved_prefs.get("month_range", [1, 6])))
     max_price = st.session_state.get("_last_max_price", _saved_prefs.get("max_price", int(dp.get("max_price_gbp", 300))))
     _stops_map = {"Any": 2, "Direct only": 0, "Max 1 stop": 1, "Direct": 0, "1 stop": 1}
-    max_stopovers = st.session_state.get("_last_max_stopovers", _stops_map.get(_saved_prefs.get("stops", "Any"), 2))
+    max_stopovers = st.session_state.get("_last_max_stopovers", _stops_map.get(_saved_prefs.get("stops", "Direct only"), 0))
     _pref_dep_raw = _saved_prefs.get("dep_days", {})
     _dep_default = {int(k): tuple(v) for k, v in _pref_dep_raw.items()} if _pref_dep_raw else {3: ("17:00", "23:59"), 4: ("00:00", "11:59")}
     departure_days = st.session_state.get("_last_dep_days", _dep_default)
