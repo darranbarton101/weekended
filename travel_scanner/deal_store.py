@@ -284,3 +284,82 @@ def save_user_prefs(conn: Client, uid: str, prefs: dict) -> None:
         conn.table("user_prefs").upsert(row).execute()
     except Exception as exc:
         logger.error("save_user_prefs failed: %s", exc)
+
+
+# ── Subscriber management ────────────────────────────────────────────────────
+
+def subscribe_email(conn: Client, email: str, uid: str,
+                    airports: list[str] | None = None,
+                    max_price: int = 300,
+                    frequency: str = "weekly") -> tuple[bool, str]:
+    """
+    Subscribe an email for deal alerts. Returns (success, message).
+    If already subscribed, updates preferences.
+    """
+    try:
+        # Check if already subscribed
+        existing = conn.table("subscribers").select("id,email,unsubscribed_at").eq("email", email.lower().strip()).execute()
+        if existing.data:
+            row = existing.data[0]
+            if row.get("unsubscribed_at"):
+                # Re-subscribe
+                conn.table("subscribers").update({
+                    "unsubscribed_at": None,
+                    "uid": uid,
+                    "airports": airports or [],
+                    "max_price": max_price,
+                    "frequency": frequency,
+                    "updated_at": _now(),
+                }).eq("id", row["id"]).execute()
+                return True, "Welcome back! You've been re-subscribed."
+            else:
+                # Update prefs
+                conn.table("subscribers").update({
+                    "airports": airports or [],
+                    "max_price": max_price,
+                    "frequency": frequency,
+                    "updated_at": _now(),
+                }).eq("id", row["id"]).execute()
+                return True, "Preferences updated!"
+        else:
+            # New subscriber
+            conn.table("subscribers").insert({
+                "email": email.lower().strip(),
+                "uid": uid,
+                "verified": False,
+                "airports": airports or [],
+                "max_price": max_price,
+                "frequency": frequency,
+                "created_at": _now(),
+                "updated_at": _now(),
+            }).execute()
+            return True, "You're signed up! We'll send you deal alerts."
+    except Exception as exc:
+        logger.error("subscribe_email failed: %s", exc)
+        return False, f"Something went wrong. Please try again."
+
+
+def unsubscribe_email(conn: Client, email: str) -> tuple[bool, str]:
+    """Unsubscribe an email from deal alerts."""
+    try:
+        existing = conn.table("subscribers").select("id").eq("email", email.lower().strip()).execute()
+        if existing.data:
+            conn.table("subscribers").update({
+                "unsubscribed_at": _now(),
+            }).eq("id", existing.data[0]["id"]).execute()
+            return True, "You've been unsubscribed. Sorry to see you go!"
+        return False, "Email not found."
+    except Exception as exc:
+        logger.error("unsubscribe_email failed: %s", exc)
+        return False, "Something went wrong. Please try again."
+
+
+def get_subscriber(conn: Client, uid: str) -> dict | None:
+    """Get subscriber info by UID."""
+    try:
+        resp = conn.table("subscribers").select("*").eq("uid", uid).is_("unsubscribed_at", "null").execute()
+        if resp.data:
+            return resp.data[0]
+    except Exception as exc:
+        logger.error("get_subscriber failed: %s", exc)
+    return None

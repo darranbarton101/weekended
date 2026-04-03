@@ -29,7 +29,7 @@ for _key in ("SERPAPI_KEY", "SUPABASE_URL", "SUPABASE_KEY"):
             pass
 
 # enrich_flight_times removed — simplified UI
-from travel_scanner.deal_store import get_connection, load_deals, mark_notified, get_user_prefs, save_user_prefs
+from travel_scanner.deal_store import get_connection, load_deals, mark_notified, get_user_prefs, save_user_prefs, subscribe_email, get_subscriber
 from travel_scanner.models import DAY_NAMES, DAY_SHORT, ScanParams
 from travel_scanner.scanner import load_config, run_scan_streaming
 
@@ -1679,6 +1679,94 @@ with tab_favs:
                     "font-size:0.75rem'>FAVOURITED FLIGHTS NOT IN CURRENT DATA</p>",
                     unsafe_allow_html=True,
                 )
+
+# ── Email alerts signup ──────────────────────────────────────────────────────
+
+st.markdown('<div class="dot-separator"></div>', unsafe_allow_html=True)
+
+# Check if user is already subscribed
+_existing_sub = None
+if _db_conn:
+    _existing_sub = get_subscriber(_db_conn, _UID)
+
+if _existing_sub:
+    st.markdown(
+        f"<div style='text-align:center;padding:12px 0'>"
+        f"<p style='font-family:Arial,sans-serif;font-size:0.75rem;"
+        f"color:#4a5bcc;font-weight:700'>✈ Deal alerts active</p>"
+        f"<p style='font-family:Arial,sans-serif;font-size:0.65rem;"
+        f"color:#9898b8'>{_existing_sub.get('email', '')} · {_existing_sub.get('frequency', 'weekly')}</p>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+else:
+    st.markdown(
+        "<div style='text-align:center;padding:8px 0 4px'>"
+        "<p style='font-family:Arial,sans-serif;font-size:0.85rem;"
+        "color:#1a1a4a;font-weight:700'>Get deal alerts by email</p>"
+        "<p style='font-family:Arial,sans-serif;font-size:0.65rem;"
+        "color:#9898b8;margin-top:2px'>We'll send you the cheapest flights — no spam, unsubscribe anytime</p>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    _email_col1, _email_col2 = st.columns([3, 1])
+    with _email_col1:
+        _sub_email = st.text_input(
+            "Email", placeholder="your@email.com",
+            label_visibility="collapsed", key="_sub_email",
+        )
+    with _email_col2:
+        _sub_freq = st.selectbox(
+            "Frequency", ["Weekly", "Daily"],
+            label_visibility="collapsed", key="_sub_freq",
+        )
+
+    _consent = st.checkbox(
+        "I agree to receive deal alert emails and accept the privacy policy below",
+        key="_email_consent",
+    )
+
+    if st.button("Sign up for alerts", use_container_width=True, key="subscribe_btn"):
+        if not _sub_email or "@" not in _sub_email or "." not in _sub_email:
+            st.error("Please enter a valid email address")
+        elif not _consent:
+            st.warning("Please tick the consent box to subscribe")
+        else:
+            if _db_conn:
+                _ok, _msg = subscribe_email(
+                    _db_conn, _sub_email, _UID,
+                    airports=origins,
+                    max_price=max_price,
+                    frequency=_sub_freq.lower(),
+                )
+                if _ok:
+                    st.success(_msg)
+                    st.rerun()
+                else:
+                    st.error(_msg)
+            else:
+                st.error("Database unavailable — please try again later")
+
+# ── Privacy policy ───────────────────────────────────────────────────────────
+
+with st.expander("Privacy Policy"):
+    st.markdown(
+        "<div style='font-family:Arial,sans-serif;font-size:0.68rem;"
+        "color:#1a1a4a;line-height:1.8'>"
+        "<b>What we collect:</b> Your email address and flight preferences "
+        "(departure airports, max price, frequency) when you sign up for alerts.<br><br>"
+        "<b>How we use it:</b> Solely to send you deal alert emails matching your preferences. "
+        "We do not sell, share, or transfer your data to third parties.<br><br>"
+        "<b>Storage:</b> Your data is stored securely in Supabase (EU region). "
+        "We retain it only while your subscription is active.<br><br>"
+        "<b>Unsubscribe:</b> Every email includes a one-click unsubscribe link. "
+        "You can also email us to request complete deletion of your data.<br><br>"
+        "<b>Your rights (GDPR):</b> You have the right to access, correct, or delete "
+        "your personal data at any time. Contact weekended@brightsignals.com for any requests."
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
 # ── Footer ───────────────────────────────────────────────────────────────────
 
