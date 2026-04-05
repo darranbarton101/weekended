@@ -423,7 +423,7 @@ def _monthly_weekend_pairs(
     start = _dt.strptime(window.date_from, "%d/%m/%Y").date()
     end   = _dt.strptime(window.date_to,   "%d/%m/%Y").date()
 
-    dep_weekdays = sorted(params.departure_days.keys()) or [3]  # default Thu
+    dep_weekdays = sorted(params.departure_days.keys()) or [4]  # default Fri
     ret_weekdays = set(params.return_days.keys()) or {6}         # default Sun
 
     pairs: list[tuple[date, date]] = []

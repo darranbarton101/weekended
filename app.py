@@ -851,11 +851,11 @@ if _show_search:
     rb1, rb2 = st.columns(2)
     with rb1:
         st.caption("MONTHS AHEAD")
-        _pref_months = _saved_prefs.get("month_range", [1, 6])
+        _pref_months = _saved_prefs.get("month_range", [1, 3])
         month_range = st.slider("Months", 1, 12, tuple(_pref_months), label_visibility="collapsed")
     with rb2:
         st.caption("MAX PRICE (GBP)")
-        _pref_price = _saved_prefs.get("max_price", int(dp.get("max_price_gbp", 300)))
+        _pref_price = _saved_prefs.get("max_price", int(dp.get("max_price_gbp", 100)))
         max_price = st.slider(
             "Max price", min_value=20, max_value=600,
             value=_pref_price, step=10,
@@ -884,7 +884,7 @@ if _show_search:
         _pref_dep = _saved_prefs.get("dep_days", {})
         _dep_default = (
             [_day_options[int(k)] for k in _pref_dep.keys() if int(k) < 7]
-            if _pref_dep else ["Thu", "Fri"]
+            if _pref_dep else ["Fri"]
         )
         _dep_selected = st.multiselect(
             "Depart on", _day_options,
@@ -896,7 +896,7 @@ if _show_search:
         for name in (_dep_selected or []):
             departure_days[_day_to_idx[name]] = ("00:00", "23:59")
         if not departure_days:
-            departure_days[3] = ("00:00", "23:59")
+            departure_days[4] = ("00:00", "23:59")  # Friday
 
     with r2c2:
         _pref_ret = _saved_prefs.get("ret_days", {})
@@ -928,15 +928,15 @@ else:
     # Search panel hidden — use session state, then saved prefs, then defaults
     run_search = False
     origins = st.session_state.get("_last_origins", _saved_prefs.get("airports", ["GLA", "EDI"]))
-    month_range = st.session_state.get("_last_month_range", tuple(_saved_prefs.get("month_range", [1, 6])))
-    max_price = st.session_state.get("_last_max_price", _saved_prefs.get("max_price", int(dp.get("max_price_gbp", 300))))
+    month_range = st.session_state.get("_last_month_range", tuple(_saved_prefs.get("month_range", [1, 3])))
+    max_price = st.session_state.get("_last_max_price", _saved_prefs.get("max_price", int(dp.get("max_price_gbp", 100))))
     _stops_map = {"Any": 2, "Direct only": 0, "Max 1 stop": 1, "Direct": 0, "1 stop": 1}
     max_stopovers = st.session_state.get("_last_max_stopovers", _stops_map.get(_saved_prefs.get("stops", "Direct only"), 0))
     _pref_dep_raw = _saved_prefs.get("dep_days", {})
-    _dep_default = {int(k): tuple(v) for k, v in _pref_dep_raw.items()} if _pref_dep_raw else {3: ("17:00", "23:59"), 4: ("00:00", "11:59")}
+    _dep_default = {int(k): tuple(v) for k, v in _pref_dep_raw.items()} if _pref_dep_raw else {4: ("00:00", "23:59")}
     departure_days = st.session_state.get("_last_dep_days", _dep_default)
     _pref_ret_raw = _saved_prefs.get("ret_days", {})
-    _ret_default = {int(k): tuple(v) for k, v in _pref_ret_raw.items()} if _pref_ret_raw else {6: ("17:00", "23:59")}
+    _ret_default = {int(k): tuple(v) for k, v in _pref_ret_raw.items()} if _pref_ret_raw else {6: ("00:00", "23:59")}
     return_days = st.session_state.get("_last_ret_days", _ret_default)
     serpapi_key = os.environ.get("SERPAPI_KEY", "")
     use_serpapi_ui = bool(serpapi_key)
