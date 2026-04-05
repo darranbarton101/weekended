@@ -1336,389 +1336,402 @@ deals = [d for d in _all_deals if d.origin in origins]
 if "selected_dest" not in st.session_state:
     st.session_state["selected_dest"] = None
 
-# ── Tabs ─────────────────────────────────────────────────────────────────────
+# ── Tabs (only shown once there are results or a search has run) ─────────────
 
-_fav_count = len(st.session_state.get("fav_flights", set()))
-_fav_label = f"Favourites ({_fav_count})" if _fav_count else "Favourites"
-tab_all, tab_favs = st.tabs(["All Destinations", _fav_label])
+_has_results = bool(deals) or "last_log" in st.session_state
 
-# ══════════════════════════════════════════════════════════════════════════════
-# ALL DESTINATIONS TAB
-# ══════════════════════════════════════════════════════════════════════════════
+if not _has_results:
+    # Fresh landing — no search run yet, no existing deals. Show a prompt.
+    st.markdown(
+        "<div style='text-align:center;padding:32px 0 16px'>"
+        "<p style='font-family:Arial, sans-serif;font-size:0.85rem;"
+        "color:#9898b8;letter-spacing:0.05em'>"
+        "SELECT YOUR AIRPORTS ABOVE AND HIT SEARCH</p></div>",
+        unsafe_allow_html=True,
+    )
 
-_rates = _fetch_exchange_rates()
+if _has_results:
+    _fav_count = len(st.session_state.get("fav_flights", set()))
+    _fav_label = f"Favourites ({_fav_count})" if _fav_count else "Favourites"
+    tab_all, tab_favs = st.tabs(["All Destinations", _fav_label])
 
-with tab_all:
-    tc1, tc2, tc3 = st.columns([4, 1.2, 1])
+    # ══════════════════════════════════════════════════════════════════════════════
+    # ALL DESTINATIONS TAB
+    # ══════════════════════════════════════════════════════════════════════════════
 
-    with tc1:
-        if deals:
-            _n_dests = len({d.destination_city or d.destination for d in deals})
-            st.markdown(
-                f"<span style='font-family:Arial, sans-serif;font-size:0.75rem;"
-                f"color:#1a1a4a;letter-spacing:0.05em'>"
-                f"<b style='color:#4a5bcc;font-size:1.1rem'>{len(deals)}</b> DEALS "
-                f"———— {_n_dests} DESTINATIONS</span>",
-                unsafe_allow_html=True,
-            )
-        else:
-            _searched = "last_log" in st.session_state
-            _had_api_errors = _searched and bool(st.session_state["last_log"].get("errors"))
-            if _had_api_errors:
-                _empty_msg = "⚠ SEARCH FAILED — SEE LOG BELOW"
-                _empty_col = "#cc3300"
-            elif _searched:
-                _empty_msg = "0 RESULTS — TRY WIDENING YOUR FILTERS"
-                _empty_col = "#9898b8"
+    _rates = _fetch_exchange_rates()
+
+    with tab_all:
+        tc1, tc2, tc3 = st.columns([4, 1.2, 1])
+
+        with tc1:
+            if deals:
+                _n_dests = len({d.destination_city or d.destination for d in deals})
+                st.markdown(
+                    f"<span style='font-family:Arial, sans-serif;font-size:0.75rem;"
+                    f"color:#1a1a4a;letter-spacing:0.05em'>"
+                    f"<b style='color:#4a5bcc;font-size:1.1rem'>{len(deals)}</b> DEALS "
+                    f"———— {_n_dests} DESTINATIONS</span>",
+                    unsafe_allow_html=True,
+                )
             else:
-                _empty_msg = "SELECT YOUR AIRPORTS ABOVE AND HIT SEARCH"
-                _empty_col = "#9898b8"
-            st.markdown(
-                f"<span style='font-family:Arial, sans-serif;font-size:0.75rem;"
-                f"color:{_empty_col}'>{_empty_msg}</span>",
-                unsafe_allow_html=True,
+                _searched = "last_log" in st.session_state
+                _had_api_errors = _searched and bool(st.session_state["last_log"].get("errors"))
+                if _had_api_errors:
+                    _empty_msg = "⚠ SEARCH FAILED — SEE LOG BELOW"
+                    _empty_col = "#cc3300"
+                elif _searched:
+                    _empty_msg = "0 RESULTS — TRY WIDENING YOUR FILTERS"
+                    _empty_col = "#9898b8"
+                else:
+                    _empty_msg = "SELECT YOUR AIRPORTS ABOVE AND HIT SEARCH"
+                    _empty_col = "#9898b8"
+                st.markdown(
+                    f"<span style='font-family:Arial, sans-serif;font-size:0.75rem;"
+                    f"color:{_empty_col}'>{_empty_msg}</span>",
+                    unsafe_allow_html=True,
+                )
+
+        with tc2:
+            sort_opt = st.selectbox(
+                "Sort by", ["Price", "Destination", "Dates available"],
+                label_visibility="collapsed",
             )
 
-    with tc2:
-        sort_opt = st.selectbox(
-            "Sort by", ["Price", "Destination", "Dates available"],
-            label_visibility="collapsed",
-        )
+        with tc3:
+            st.selectbox(
+                "Currency", list(_CURRENCY_SYMBOLS.keys()),
+                index=0, label_visibility="collapsed", key="_currency",
+            )
 
-    with tc3:
-        st.selectbox(
-            "Currency", list(_CURRENCY_SYMBOLS.keys()),
-            index=0, label_visibility="collapsed", key="_currency",
-        )
+        _cur = st.session_state.get("_currency", "GBP")
 
-    _cur = st.session_state.get("_currency", "GBP")
+        filtered = deals[:]
 
-    filtered = deals[:]
+        # Last search log
+        if "last_log" in st.session_state:
+            log = st.session_state["last_log"]
+            errors_saved = log.get("errors", [])
+            db_errors_saved = log.get("db_errors", [])
+            warnings_saved = log.get("warnings", [])
+            step_log_saved = log.get("step_log", [])
 
-    # Last search log
-    if "last_log" in st.session_state:
-        log = st.session_state["last_log"]
-        errors_saved = log.get("errors", [])
-        db_errors_saved = log.get("db_errors", [])
-        warnings_saved = log.get("warnings", [])
-        step_log_saved = log.get("step_log", [])
+            if errors_saved:
+                st.error(f"Last search: {len(errors_saved)} error(s) — some routes may be missing")
+            elif db_errors_saved:
+                st.warning(f"Last search complete — {len(db_errors_saved)} database warning(s)")
 
-        if errors_saved:
-            st.error(f"Last search: {len(errors_saved)} error(s) — some routes may be missing")
-        elif db_errors_saved:
-            st.warning(f"Last search complete — {len(db_errors_saved)} database warning(s)")
+            with st.expander("[ Search Log ]", expanded=bool(errors_saved)):
+                for line in step_log_saved:
+                    st.markdown(f"`{line}`")
+                if errors_saved or db_errors_saved:
+                    st.markdown("---")
+                    for name, msg in errors_saved + db_errors_saved:
+                        st.markdown(f"`⚠ {name}: {msg}`")
 
-        with st.expander("[ Search Log ]", expanded=bool(errors_saved)):
-            for line in step_log_saved:
-                st.markdown(f"`{line}`")
-            if errors_saved or db_errors_saved:
-                st.markdown("---")
-                for name, msg in errors_saved + db_errors_saved:
-                    st.markdown(f"`⚠ {name}: {msg}`")
+        # ── DETAIL VIEW ──────────────────────────────────────────────────────────
 
-    # ── DETAIL VIEW ──────────────────────────────────────────────────────────
+        selected = st.session_state.get("selected_dest")
 
-    selected = st.session_state.get("selected_dest")
+        if selected and filtered:
+            dest_deals = [d for d in filtered
+                          if (d.destination_city or d.destination) == selected]
 
-    if selected and filtered:
-        dest_deals = [d for d in filtered
-                      if (d.destination_city or d.destination) == selected]
-
-        if not dest_deals:
-            st.session_state["selected_dest"] = None
-            st.rerun()
-
-        bc1, bc2 = st.columns([6, 1])
-        with bc1:
-            if st.button("← Back"):
+            if not dest_deals:
                 st.session_state["selected_dest"] = None
                 st.rerun()
 
-        cheapest = min(dest_deals, key=lambda d: d.price_gbp)
-        airlines_str = ", ".join(sorted({d.airline or "?" for d in dest_deals}))
-        country = cheapest.destination_country or ""
-
-        st.markdown(
-            f"<div style='margin:8px 0 4px'>"
-            f"<span style='font-size:2rem;font-weight:900;color:#4a5bcc;text-transform:uppercase;"
-            f"letter-spacing:-0.01em'>{selected}</span>"
-            + (f"<span style='color:#9898b8;font-family:Arial, sans-serif;"
-               f"font-size:0.8rem;margin-left:14px'>{country}</span>" if country else "")
-            + f"</div>"
-            f"<div style='font-family:Arial, sans-serif;font-size:0.85rem;"
-            f"color:#1a1a4a;margin-bottom:12px'>"
-            f"FROM {_fmt(cheapest.price_gbp, _cur, _rates)} ———— {len(dest_deals)} OPTIONS ———— {airlines_str.upper()}"
-            f"</div>",
-            unsafe_allow_html=True,
-        )
-
-        # Map locator
-        _map_query = f"{selected} {country}"
-        _map_embed_q = _map_query.replace(' ', '+')
-        with st.popover("🌍 Where is this?", key="map_detail"):
-            st.markdown(
-                f"<p style='font-family:Arial, sans-serif;font-size:0.8rem;"
-                f"color:#4a5bcc;letter-spacing:0.05em;margin-bottom:8px'>"
-                f"<b>🌍 {selected}, {country.upper()}</b></p>",
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                f'<iframe width="380" height="300" style="border:0;border-radius:8px" loading="lazy" '
-                f'referrerpolicy="no-referrer-when-downgrade" '
-                f'src="https://maps.google.com/maps?q={_map_embed_q}&output=embed&z=6">'
-                f'</iframe>',
-                unsafe_allow_html=True,
-            )
-            _map_url = f"https://www.google.com/maps/search/?api=1&query={_map_embed_q}"
-            st.markdown(
-                f"<p style='font-family:Arial, sans-serif;font-size:0.65rem;"
-                f"color:#9898b8;margin-top:8px;letter-spacing:0.05em'>"
-                f"✈ {cheapest.destination} · <a href='{_map_url}' target='_blank' "
-                f"style='color:#1a1a4a'>Open in Google Maps →</a></p>",
-                unsafe_allow_html=True,
-            )
-
-        st.markdown('<div class="dot-separator"></div>', unsafe_allow_html=True)
-
-        st.markdown('<div class="dot-separator"></div>', unsafe_allow_html=True)
-
-        sorted_deals = sorted(dest_deals, key=lambda d: d.price_gbp)
-        for i, deal in enumerate(sorted_deals):
-            dep = _fmt_dt(deal.outbound_departure)
-            ret = _fmt_dt(deal.return_departure)
-            _is_fav = deal.id in st.session_state["fav_flights"]
-            _heart = "♥" if _is_fav else ""
-            _border_col = "#000080" if _is_fav else "#808080"
-            _bg = "#ffffff" if _is_fav else "transparent"
-
-            _raised = "box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff"
-            _origin_name = _airport_names.get(deal.origin, deal.origin)
-            _deal_html = (
-                f'<div style="background:{_bg};{_raised};'
-                f'padding:8px 14px;margin-bottom:4px">'
-                f'<div style="font-family:Arial,sans-serif;font-size:0.78rem;'
-                f'color:#1a1a4a;display:flex;align-items:center;justify-content:space-between">'
-                f'<div>'
-                f'<b style="color:#4a5bcc;font-size:1rem">{_fmt(deal.price_gbp, _cur, _rates)}</b>'
-                f'&nbsp;&nbsp;{dep} → {ret}'
-                f'&nbsp;&nbsp;{deal.airline}'
-                f'&nbsp;&nbsp;{deal.nights} nights'
-                f'</div>'
-                f'<span style="color:#4a5bcc;font-size:1.2rem">{_heart}</span>'
-                f'</div>'
-                f'<div style="font-family:Arial,sans-serif;font-size:0.72rem;color:#9898b8;margin-top:3px">'
-                f'Flying from <b style="color:#1a1a4a">{_origin_name}</b>'
-                f'</div>'
-                f'</div>'
-            )
-            st.markdown(_deal_html, unsafe_allow_html=True)
-
-            fc1, fc2, fc3 = st.columns([2, 2, 2])
-            with fc1:
-                _fav_lbl = "♥ Favourited" if _is_fav else "♡ Favourite"
-                if st.button(_fav_lbl, key=f"fav_{selected}_{i}", use_container_width=True):
-                    if _is_fav:
-                        st.session_state["fav_flights"].discard(deal.id)
-                    else:
-                        st.session_state["fav_flights"].add(deal.id)
-                    _save_favourites()
+            bc1, bc2 = st.columns([6, 1])
+            with bc1:
+                if st.button("← Back"):
+                    st.session_state["selected_dest"] = None
                     st.rerun()
-            with fc2:
-                link = _fix_deep_link(deal.deep_link)
-                if link:
-                    st.markdown(
-                        f"<a href='{link}' target='_blank' style='display:block;text-align:center;"
-                        f"padding:0.4rem;background:#ffffff;color:#1a1a4a;"
-                        f"box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;"
-                        f"text-decoration:none;font-family:Arial,sans-serif;font-size:0.75rem;"
-                        f"font-weight:700'>Book →</a>",
-                        unsafe_allow_html=True,
-                    )
-            with fc3:
-                with st.popover("Share", key=f"share_{selected}_{i}", use_container_width=True):
-                    st.code(_share_deal_text(deal), language=None)
 
-        conn = get_connection(db_path)
-        mark_notified(conn, [d.id for d in dest_deals if not d.notified])
-        # conn.close()  # Supabase client doesn't need closing
-        shown_ids = {d.id for d in dest_deals}
-        for deal in st.session_state["deals"]:
-            if deal.id in shown_ids:
-                deal.notified = True
+            cheapest = min(dest_deals, key=lambda d: d.price_gbp)
+            airlines_str = ", ".join(sorted({d.airline or "?" for d in dest_deals}))
+            country = cheapest.destination_country or ""
 
-    # ── SUMMARY VIEW ─────────────────────────────────────────────────────────
+            st.markdown(
+                f"<div style='margin:8px 0 4px'>"
+                f"<span style='font-size:2rem;font-weight:900;color:#4a5bcc;text-transform:uppercase;"
+                f"letter-spacing:-0.01em'>{selected}</span>"
+                + (f"<span style='color:#9898b8;font-family:Arial, sans-serif;"
+                   f"font-size:0.8rem;margin-left:14px'>{country}</span>" if country else "")
+                + f"</div>"
+                f"<div style='font-family:Arial, sans-serif;font-size:0.85rem;"
+                f"color:#1a1a4a;margin-bottom:12px'>"
+                f"FROM {_fmt(cheapest.price_gbp, _cur, _rates)} ———— {len(dest_deals)} OPTIONS ———— {airlines_str.upper()}"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
 
-    elif filtered:
-        groups = _group_destinations(filtered)
-        # Summary page — destination cards
+            # Map locator
+            _map_query = f"{selected} {country}"
+            _map_embed_q = _map_query.replace(' ', '+')
+            with st.popover("🌍 Where is this?", key="map_detail"):
+                st.markdown(
+                    f"<p style='font-family:Arial, sans-serif;font-size:0.8rem;"
+                    f"color:#4a5bcc;letter-spacing:0.05em;margin-bottom:8px'>"
+                    f"<b>🌍 {selected}, {country.upper()}</b></p>",
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    f'<iframe width="380" height="300" style="border:0;border-radius:8px" loading="lazy" '
+                    f'referrerpolicy="no-referrer-when-downgrade" '
+                    f'src="https://maps.google.com/maps?q={_map_embed_q}&output=embed&z=6">'
+                    f'</iframe>',
+                    unsafe_allow_html=True,
+                )
+                _map_url = f"https://www.google.com/maps/search/?api=1&query={_map_embed_q}"
+                st.markdown(
+                    f"<p style='font-family:Arial, sans-serif;font-size:0.65rem;"
+                    f"color:#9898b8;margin-top:8px;letter-spacing:0.05em'>"
+                    f"✈ {cheapest.destination} · <a href='{_map_url}' target='_blank' "
+                    f"style='color:#1a1a4a'>Open in Google Maps →</a></p>",
+                    unsafe_allow_html=True,
+                )
 
-        if sort_opt == "Price":
-            sorted_groups = sorted(groups.values(), key=lambda g: g["min_price"])
-        elif sort_opt == "Destination":
-            sorted_groups = sorted(groups.values(), key=lambda g: g["city"])
-        else:
-            sorted_groups = sorted(groups.values(), key=lambda g: -g["deal_count"])
+            st.markdown('<div class="dot-separator"></div>', unsafe_allow_html=True)
 
-        COLS_PER_ROW = 2
-        for row_start in range(0, len(sorted_groups), COLS_PER_ROW):
-            row_groups = sorted_groups[row_start:row_start + COLS_PER_ROW]
-            cols = st.columns(COLS_PER_ROW)
-            for col, g in zip(cols, row_groups):
-                with col:
-                    city = g["city"]
-                    country = g["country"]
-                    price = g["min_price"]
-                    count = g["deal_count"]
-                    plural = "s" if count != 1 else ""
-                    _date_text = f"<b style='color:#1a1a4a'>{count} date{plural}</b>"
+            st.markdown('<div class="dot-separator"></div>', unsafe_allow_html=True)
 
-                    # Visual card container — globe link embedded in title bar
-                    _map_query = f"{city} {country}"
-                    _map_url_card = f"https://www.google.com/maps/search/?api=1&query={_map_query.replace(' ', '+')}"
-                    st.markdown(
-                        f"<div style='background:#ffffff;"
-                        f"box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;"
-                        f"padding:8px 12px;margin-bottom:2px'>"
-                        f"<div style='background:linear-gradient(to right,#e09010 0%,#f5b835 100%);"
-                        f"padding:3px 8px;margin:-8px -12px 8px;display:flex;justify-content:space-between;align-items:center'>"
-                        f"<span style='color:#ffffff;font-family:Arial,sans-serif;font-size:0.75rem;font-weight:700'>"
-                        f"{city.upper()}</span>"
-                        f"<a href='{_map_url_card}' target='_blank' title='View on map' "
-                        f"style='color:#ffffff;text-decoration:none;font-size:0.85rem;line-height:1;opacity:0.9'>🌍</a>"
-                        f"</div>"
-                        f"<div style='display:flex;justify-content:space-between;align-items:baseline'>"
-                        f"<span style='font-family:Arial,sans-serif;font-size:0.72rem;color:#1a1a4a'>"
-                        f"{country}</span>"
-                        f"<b style='color:#4a5bcc;font-size:1.05rem;font-family:Arial,sans-serif'>{_fmt(price, _cur, _rates)}</b>"
-                        f"</div>"
-                        f"<div style='font-family:Arial,sans-serif;font-size:0.65rem;"
-                        f"color:#9898b8;margin-top:2px'>"
-                        f"{_date_text}"
-                        f"</div>"
-                        f"</div>",
-                        unsafe_allow_html=True,
-                    )
+            sorted_deals = sorted(dest_deals, key=lambda d: d.price_gbp)
+            for i, deal in enumerate(sorted_deals):
+                dep = _fmt_dt(deal.outbound_departure)
+                ret = _fmt_dt(deal.return_departure)
+                _is_fav = deal.id in st.session_state["fav_flights"]
+                _heart = "♥" if _is_fav else ""
+                _border_col = "#000080" if _is_fav else "#808080"
+                _bg = "#ffffff" if _is_fav else "transparent"
 
-                    # Action button — full width
-                    if st.button("View deals", key=f"view_{city}", use_container_width=True):
-                        st.session_state["selected_dest"] = city
+                _raised = "box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff"
+                _origin_name = _airport_names.get(deal.origin, deal.origin)
+                _deal_html = (
+                    f'<div style="background:{_bg};{_raised};'
+                    f'padding:8px 14px;margin-bottom:4px">'
+                    f'<div style="font-family:Arial,sans-serif;font-size:0.78rem;'
+                    f'color:#1a1a4a;display:flex;align-items:center;justify-content:space-between">'
+                    f'<div>'
+                    f'<b style="color:#4a5bcc;font-size:1rem">{_fmt(deal.price_gbp, _cur, _rates)}</b>'
+                    f'&nbsp;&nbsp;{dep} → {ret}'
+                    f'&nbsp;&nbsp;{deal.airline}'
+                    f'&nbsp;&nbsp;{deal.nights} nights'
+                    f'</div>'
+                    f'<span style="color:#4a5bcc;font-size:1.2rem">{_heart}</span>'
+                    f'</div>'
+                    f'<div style="font-family:Arial,sans-serif;font-size:0.72rem;color:#9898b8;margin-top:3px">'
+                    f'Flying from <b style="color:#1a1a4a">{_origin_name}</b>'
+                    f'</div>'
+                    f'</div>'
+                )
+                st.markdown(_deal_html, unsafe_allow_html=True)
+
+                fc1, fc2, fc3 = st.columns([2, 2, 2])
+                with fc1:
+                    _fav_lbl = "♥ Favourited" if _is_fav else "♡ Favourite"
+                    if st.button(_fav_lbl, key=f"fav_{selected}_{i}", use_container_width=True):
+                        if _is_fav:
+                            st.session_state["fav_flights"].discard(deal.id)
+                        else:
+                            st.session_state["fav_flights"].add(deal.id)
+                        _save_favourites()
                         st.rerun()
+                with fc2:
+                    link = _fix_deep_link(deal.deep_link)
+                    if link:
+                        st.markdown(
+                            f"<a href='{link}' target='_blank' style='display:block;text-align:center;"
+                            f"padding:0.4rem;background:#ffffff;color:#1a1a4a;"
+                            f"box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;"
+                            f"text-decoration:none;font-family:Arial,sans-serif;font-size:0.75rem;"
+                            f"font-weight:700'>Book →</a>",
+                            unsafe_allow_html=True,
+                        )
+                with fc3:
+                    with st.popover("Share", key=f"share_{selected}_{i}", use_container_width=True):
+                        st.code(_share_deal_text(deal), language=None)
 
-        conn = get_connection(db_path)
-        mark_notified(conn, [d.id for d in filtered if not d.notified])
-        # conn.close()  # Supabase client doesn't need closing
-        shown_ids = {d.id for d in filtered}
-        for deal in st.session_state["deals"]:
-            if deal.id in shown_ids:
-                deal.notified = True
+            conn = get_connection(db_path)
+            mark_notified(conn, [d.id for d in dest_deals if not d.notified])
+            # conn.close()  # Supabase client doesn't need closing
+            shown_ids = {d.id for d in dest_deals}
+            for deal in st.session_state["deals"]:
+                if deal.id in shown_ids:
+                    deal.notified = True
 
-    else:
-        if deals:
+        # ── SUMMARY VIEW ─────────────────────────────────────────────────────────
+
+        elif filtered:
+            groups = _group_destinations(filtered)
+            # Summary page — destination cards
+
+            if sort_opt == "Price":
+                sorted_groups = sorted(groups.values(), key=lambda g: g["min_price"])
+            elif sort_opt == "Destination":
+                sorted_groups = sorted(groups.values(), key=lambda g: g["city"])
+            else:
+                sorted_groups = sorted(groups.values(), key=lambda g: -g["deal_count"])
+
+            COLS_PER_ROW = 2
+            for row_start in range(0, len(sorted_groups), COLS_PER_ROW):
+                row_groups = sorted_groups[row_start:row_start + COLS_PER_ROW]
+                cols = st.columns(COLS_PER_ROW)
+                for col, g in zip(cols, row_groups):
+                    with col:
+                        city = g["city"]
+                        country = g["country"]
+                        price = g["min_price"]
+                        count = g["deal_count"]
+                        plural = "s" if count != 1 else ""
+                        _date_text = f"<b style='color:#1a1a4a'>{count} date{plural}</b>"
+
+                        # Visual card container — globe link embedded in title bar
+                        _map_query = f"{city} {country}"
+                        _map_url_card = f"https://www.google.com/maps/search/?api=1&query={_map_query.replace(' ', '+')}"
+                        st.markdown(
+                            f"<div style='background:#ffffff;"
+                            f"box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;"
+                            f"padding:8px 12px;margin-bottom:2px'>"
+                            f"<div style='background:linear-gradient(to right,#e09010 0%,#f5b835 100%);"
+                            f"padding:3px 8px;margin:-8px -12px 8px;display:flex;justify-content:space-between;align-items:center'>"
+                            f"<span style='color:#ffffff;font-family:Arial,sans-serif;font-size:0.75rem;font-weight:700'>"
+                            f"{city.upper()}</span>"
+                            f"<a href='{_map_url_card}' target='_blank' title='View on map' "
+                            f"style='color:#ffffff;text-decoration:none;font-size:0.85rem;line-height:1;opacity:0.9'>🌍</a>"
+                            f"</div>"
+                            f"<div style='display:flex;justify-content:space-between;align-items:baseline'>"
+                            f"<span style='font-family:Arial,sans-serif;font-size:0.72rem;color:#1a1a4a'>"
+                            f"{country}</span>"
+                            f"<b style='color:#4a5bcc;font-size:1.05rem;font-family:Arial,sans-serif'>{_fmt(price, _cur, _rates)}</b>"
+                            f"</div>"
+                            f"<div style='font-family:Arial,sans-serif;font-size:0.65rem;"
+                            f"color:#9898b8;margin-top:2px'>"
+                            f"{_date_text}"
+                            f"</div>"
+                            f"</div>",
+                            unsafe_allow_html=True,
+                        )
+
+                        # Action button — full width
+                        if st.button("View deals", key=f"view_{city}", use_container_width=True):
+                            st.session_state["selected_dest"] = city
+                            st.rerun()
+
+            conn = get_connection(db_path)
+            mark_notified(conn, [d.id for d in filtered if not d.notified])
+            # conn.close()  # Supabase client doesn't need closing
+            shown_ids = {d.id for d in filtered}
+            for deal in st.session_state["deals"]:
+                if deal.id in shown_ids:
+                    deal.notified = True
+
+        else:
+            if deals:
+                st.markdown(
+                    "<p style='font-family:Arial, sans-serif;color:#9898b8;"
+                    "font-size:0.8rem;padding:2rem 0;letter-spacing:0.05em'>"
+                    "NO DEALS MATCH CURRENT FILTER</p>",
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    "<div style='padding:3rem 0;text-align:center'>"
+                    "<p style='font-family:Arial, sans-serif;color:#1a1a4a;"
+                    "font-size:1rem;letter-spacing:0.05em;font-weight:700;margin-bottom:16px'>"
+                    "READY TO FIND YOUR NEXT WEEKEND AWAY?</p>"
+                    "<p style='font-family:Arial, sans-serif;color:#9898b8;"
+                    "font-size:0.72rem;letter-spacing:0.06em;line-height:2'>"
+                    "1. Open <b style='color:#1a1a4a'>[ SEARCH ]</b> above<br>"
+                    "2. Pick your departure airport and travel dates<br>"
+                    "3. Hit <b style='color:#1a1a4a'>Search</b> — "
+                    "we scan Google Flights for the cheapest weekend return flights<br>"
+                    "4. Browse destinations, then hit <b style='color:#1a1a4a'>Book</b> "
+                    "to see exact flight times and book on Skyscanner</p>"
+                    "<p style='font-family:Arial, sans-serif;color:#9898b8;"
+                    "font-size:0.62rem;letter-spacing:0.08em;margin-top:20px'>"
+                    "TIP: Add Mon to your return days to catch early morning flights back for work</p>"
+                    "</div>",
+                    unsafe_allow_html=True,
+                )
+
+    # ══════════════════════════════════════════════════════════════════════════════
+    # FAVOURITES TAB
+    # ══════════════════════════════════════════════════════════════════════════════
+
+    with tab_favs:
+        _cur = st.session_state.get("_currency", "GBP")
+        fav_ids = st.session_state.get("fav_flights", set())
+
+        if not fav_ids:
             st.markdown(
                 "<p style='font-family:Arial, sans-serif;color:#9898b8;"
                 "font-size:0.8rem;padding:2rem 0;letter-spacing:0.05em'>"
-                "NO DEALS MATCH CURRENT FILTER</p>",
+                "NO FAVOURITES YET — CLICK ♡ ON A FLIGHT TO SAVE IT HERE</p>",
                 unsafe_allow_html=True,
             )
         else:
-            st.markdown(
-                "<div style='padding:3rem 0;text-align:center'>"
-                "<p style='font-family:Arial, sans-serif;color:#1a1a4a;"
-                "font-size:1rem;letter-spacing:0.05em;font-weight:700;margin-bottom:16px'>"
-                "READY TO FIND YOUR NEXT WEEKEND AWAY?</p>"
-                "<p style='font-family:Arial, sans-serif;color:#9898b8;"
-                "font-size:0.72rem;letter-spacing:0.06em;line-height:2'>"
-                "1. Open <b style='color:#1a1a4a'>[ SEARCH ]</b> above<br>"
-                "2. Pick your departure airport and travel dates<br>"
-                "3. Hit <b style='color:#1a1a4a'>Search</b> — "
-                "we scan Google Flights for the cheapest weekend return flights<br>"
-                "4. Browse destinations, then hit <b style='color:#1a1a4a'>Book</b> "
-                "to see exact flight times and book on Skyscanner</p>"
-                "<p style='font-family:Arial, sans-serif;color:#9898b8;"
-                "font-size:0.62rem;letter-spacing:0.08em;margin-top:20px'>"
-                "TIP: Add Mon to your return days to catch early morning flights back for work</p>"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-# ══════════════════════════════════════════════════════════════════════════════
-# FAVOURITES TAB
-# ══════════════════════════════════════════════════════════════════════════════
-
-with tab_favs:
-    _cur = st.session_state.get("_currency", "GBP")
-    fav_ids = st.session_state.get("fav_flights", set())
-
-    if not fav_ids:
-        st.markdown(
-            "<p style='font-family:Arial, sans-serif;color:#9898b8;"
-            "font-size:0.8rem;padding:2rem 0;letter-spacing:0.05em'>"
-            "NO FAVOURITES YET — CLICK ♡ ON A FLIGHT TO SAVE IT HERE</p>",
-            unsafe_allow_html=True,
-        )
-    else:
-        if fav_ids:
-            st.markdown(
-                "<p style='font-family:Arial, sans-serif;color:#9898b8;"
-                "font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
-                "margin-bottom:8px'>♥ Favourited Flights</p>",
-                unsafe_allow_html=True,
-            )
-            fav_deals = [d for d in deals if d.id in fav_ids]
-            if fav_deals:
-                fav_deals.sort(key=lambda d: d.price_gbp)
-
-                for i, deal in enumerate(fav_deals):
-                    dep = _fmt_dt(deal.outbound_departure)
-                    ret = _fmt_dt(deal.return_departure)
-                    city = deal.destination_city or deal.destination
-                    country = deal.destination_country or ""
-
-                    st.markdown(
-                        f"""<div style="background:#ffffff;box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;
-                            padding:8px 14px;margin-bottom:4px">
-                            <div style="display:flex;justify-content:space-between;align-items:baseline">
-                                <div style="font-family:Arial,sans-serif;font-size:0.78rem;
-                                    color:#1a1a4a">
-                                    <b style="color:#4a5bcc;font-size:0.95rem">{_fmt(deal.price_gbp, _cur, _rates)}</b>
-                                    &nbsp;&nbsp; <b style="color:#4a5bcc">{city.upper()}</b>
-                                    <span style="color:#9898b8;font-size:0.68rem">&nbsp;{country.upper()}</span>
-                                    &nbsp;&nbsp;{dep} → {ret}
-                                    &nbsp;&nbsp;{deal.airline}
-                                    &nbsp;&nbsp;{deal.nights}N
-                                    &nbsp;&nbsp;{deal.origin}
-                                </div>
-                                <span style="color:#4a5bcc;font-size:1rem">♥</span>
-                            </div>
-                        </div>""",
-                        unsafe_allow_html=True,
-                    )
-
-                    fc1, fc2, fc3 = st.columns([2, 2, 2])
-                    with fc1:
-                        if st.button("Remove ♥", key=f"unfav_{i}", use_container_width=True):
-                            st.session_state["fav_flights"].discard(deal.id)
-                            _save_favourites()
-                            st.rerun()
-                    with fc2:
-                        link = _fix_deep_link(deal.deep_link)
-                        if link:
-                            st.markdown(
-                                f"<a href='{link}' target='_blank' style='display:block;text-align:center;"
-                                f"padding:0.45rem;border:1px solid #808080;color:#1a1a4a;"
-                                f"text-decoration:none;font-family:Arial, sans-serif;font-size:0.72rem;"
-                                f"letter-spacing:0.08em;text-transform:uppercase'>Book →</a>",
-                                unsafe_allow_html=True,
-                            )
-                    with fc3:
-                        with st.popover("Share", key=f"fav_share_{i}", use_container_width=True):
-                            st.code(_share_deal_text(deal), language=None)
-            else:
+            if fav_ids:
                 st.markdown(
                     "<p style='font-family:Arial, sans-serif;color:#9898b8;"
-                    "font-size:0.75rem'>FAVOURITED FLIGHTS NOT IN CURRENT DATA</p>",
+                    "font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;"
+                    "margin-bottom:8px'>♥ Favourited Flights</p>",
                     unsafe_allow_html=True,
                 )
+                fav_deals = [d for d in deals if d.id in fav_ids]
+                if fav_deals:
+                    fav_deals.sort(key=lambda d: d.price_gbp)
+
+                    for i, deal in enumerate(fav_deals):
+                        dep = _fmt_dt(deal.outbound_departure)
+                        ret = _fmt_dt(deal.return_departure)
+                        city = deal.destination_city or deal.destination
+                        country = deal.destination_country or ""
+
+                        st.markdown(
+                            f"""<div style="background:#ffffff;box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;
+                                padding:8px 14px;margin-bottom:4px">
+                                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                                    <div style="font-family:Arial,sans-serif;font-size:0.78rem;
+                                        color:#1a1a4a">
+                                        <b style="color:#4a5bcc;font-size:0.95rem">{_fmt(deal.price_gbp, _cur, _rates)}</b>
+                                        &nbsp;&nbsp; <b style="color:#4a5bcc">{city.upper()}</b>
+                                        <span style="color:#9898b8;font-size:0.68rem">&nbsp;{country.upper()}</span>
+                                        &nbsp;&nbsp;{dep} → {ret}
+                                        &nbsp;&nbsp;{deal.airline}
+                                        &nbsp;&nbsp;{deal.nights}N
+                                        &nbsp;&nbsp;{deal.origin}
+                                    </div>
+                                    <span style="color:#4a5bcc;font-size:1rem">♥</span>
+                                </div>
+                            </div>""",
+                            unsafe_allow_html=True,
+                        )
+
+                        fc1, fc2, fc3 = st.columns([2, 2, 2])
+                        with fc1:
+                            if st.button("Remove ♥", key=f"unfav_{i}", use_container_width=True):
+                                st.session_state["fav_flights"].discard(deal.id)
+                                _save_favourites()
+                                st.rerun()
+                        with fc2:
+                            link = _fix_deep_link(deal.deep_link)
+                            if link:
+                                st.markdown(
+                                    f"<a href='{link}' target='_blank' style='display:block;text-align:center;"
+                                    f"padding:0.45rem;border:1px solid #808080;color:#1a1a4a;"
+                                    f"text-decoration:none;font-family:Arial, sans-serif;font-size:0.72rem;"
+                                    f"letter-spacing:0.08em;text-transform:uppercase'>Book →</a>",
+                                    unsafe_allow_html=True,
+                                )
+                        with fc3:
+                            with st.popover("Share", key=f"fav_share_{i}", use_container_width=True):
+                                st.code(_share_deal_text(deal), language=None)
+                else:
+                    st.markdown(
+                        "<p style='font-family:Arial, sans-serif;color:#9898b8;"
+                        "font-size:0.75rem'>FAVOURITED FLIGHTS NOT IN CURRENT DATA</p>",
+                        unsafe_allow_html=True,
+                    )
 
 # ── Email alerts signup ──────────────────────────────────────────────────────
 
