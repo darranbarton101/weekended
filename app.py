@@ -1323,11 +1323,11 @@ if _is_searching:
         st.rerun()
 
 # ── Load deals ───────────────────────────────────────────────────────────────
+# Deals are only loaded after a search is run (see st.session_state["deals"]
+# being set after scan completes above). On fresh landing, no deals are shown.
 
 if "deals" not in st.session_state:
-    conn = get_connection(db_path)
-    st.session_state["deals"] = load_deals(conn)
-    # conn.close()  # Supabase client doesn't need closing
+    st.session_state["deals"] = []
 
 # Filter deals to only show results from currently selected airports
 _all_deals = st.session_state.get("deals", [])
