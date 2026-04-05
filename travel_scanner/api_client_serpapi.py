@@ -28,7 +28,11 @@ from .models import Deal, ScanParams, SearchWindow
 logger = logging.getLogger(__name__)
 
 # ── SerpAPI response cache (Supabase-backed, shared across all users) ────────
-CACHE_TTL_HOURS = 24
+# Tiered TTL: flights far out change slowly, nearby flights change fast
+CACHE_TTL_HOURS = 24  # default fallback
+CACHE_TTL_NEARBY_HOURS = 8     # travel date < 2 months away
+CACHE_TTL_MEDIUM_HOURS = 24    # travel date 2-4 months away
+CACHE_TTL_FAR_HOURS = 72       # travel date 4+ months away
 
 # Lazy Supabase client for cache — avoids import-time env var requirement
 _cache_conn = None
@@ -46,23 +50,80 @@ def _get_cache_conn():
     return _cache_conn
 
 
-def _cache_get(key: str) -> list[dict] | None:
-    """Return cached results from Supabase if fresh, else None."""
+def _ttl_for_travel_date(travel_date_str: str) -> float:
+    """Return cache TTL in hours based on how far away the travel date is."""
+    try:
+        travel_date = datetime.strptime(travel_date_str, "%Y-%m-%d").date()
+        days_away = (travel_date - date.today()).days
+        if days_away < 60:
+            return CACHE_TTL_NEARBY_HOURS
+        elif days_away < 120:
+            return CACHE_TTL_MEDIUM_HOURS
+        else:
+            return CACHE_TTL_FAR_HOURS
+    except (ValueError, TypeError):
+        return CACHE_TTL_HOURS
+
+
+def _canonicalise_airports(airport_str: str) -> str:
+    """Sort comma-separated airport codes so LHR,STN == STN,LHR in cache keys."""
+    if not airport_str:
+        return airport_str
+    codes = [c.strip().upper() for c in airport_str.split(",") if c.strip()]
+    return ",".join(sorted(codes))
+
+
+def _make_cache_key(params_dict: dict) -> str:
+    """Build a canonical cache key from API params.
+
+    Strategy B: Canonicalise airport codes so different orderings hit same cache.
+    Strategy H: For google_travel_explore (open-destination), key by origin + month
+    rather than exact dates — the API returns the cheapest date in the range anyway,
+    so different date pairs in the same month give equivalent results.
+    """
+    engine = params_dict.get("engine", "")
+    origin = _canonicalise_airports(params_dict.get("departure_id", ""))
+    dest = _canonicalise_airports(params_dict.get("arrival_id", ""))
+    out_date = params_dict.get("outbound_date", "")
+    ret_date = params_dict.get("return_date", "")
+
+    if engine == "google_travel_explore" and out_date:
+        # Strategy H: key by origin + month (YYYY-MM) instead of exact dates.
+        # google_travel_explore returns cheapest price per destination for a date
+        # range, so Thu 3 Apr→Sun 6 Apr and Thu 10 Apr→Sun 13 Apr give the same
+        # "cheapest in April" result. One cache entry covers the whole month.
+        month_key = out_date[:7]  # "2026-04" from "2026-04-03"
+        return f"{engine}|{origin}|{dest}|{month_key}"
+    else:
+        # google_flights enrichment: key by exact route + dates + time filters
+        out_times = params_dict.get("outbound_times", "")
+        ret_times = params_dict.get("return_times", "")
+        return f"{engine}|{origin}|{dest}|{out_date}|{ret_date}|{out_times}|{ret_times}"
+
+
+def _cache_get(key: str, ttl_hours: float | None = None) -> list[dict] | None:
+    """Return cached results from Supabase if fresh, else None.
+
+    ttl_hours overrides default TTL (used by tiered TTL strategy).
+    """
+    ttl = ttl_hours or CACHE_TTL_HOURS
     conn = _get_cache_conn()
     if not conn:
-        return _cache_get_file(key)  # fallback to file cache
+        return _cache_get_file(key, ttl)  # fallback to file cache
     try:
         resp = conn.table("api_cache").select("data,cached_at").eq("cache_key", key).execute()
         if resp.data:
             row = resp.data[0]
             cached_at = datetime.fromisoformat(row["cached_at"])
             age_hours = (datetime.utcnow() - cached_at.replace(tzinfo=None)).total_seconds() / 3600
-            if age_hours < CACHE_TTL_HOURS:
-                logger.info("SerpAPI cache hit: %s (%.1fh old)", key[:40], age_hours)
+            if age_hours < ttl:
+                logger.info("SerpAPI cache hit: %s (%.1fh old, TTL %.0fh)", key[:40], age_hours, ttl)
                 return json.loads(row["data"]) if isinstance(row["data"], str) else row["data"]
+            else:
+                logger.info("SerpAPI cache expired: %s (%.1fh old > TTL %.0fh)", key[:40], age_hours, ttl)
     except Exception as exc:
         logger.debug("Supabase cache read failed: %s — falling back to file", exc)
-        return _cache_get_file(key)
+        return _cache_get_file(key, ttl)
     return None
 
 
@@ -97,14 +158,15 @@ def _load_file_cache() -> dict:
     return {}
 
 
-def _cache_get_file(key: str) -> list[dict] | None:
+def _cache_get_file(key: str, ttl_hours: float | None = None) -> list[dict] | None:
+    ttl = ttl_hours or CACHE_TTL_HOURS
     cache = _load_file_cache()
     entry = cache.get(key)
     if entry:
         cached_at = datetime.fromisoformat(entry["ts"])
         age_hours = (datetime.utcnow() - cached_at).total_seconds() / 3600
-        if age_hours < CACHE_TTL_HOURS:
-            logger.info("SerpAPI file cache hit: %s (%.1fh old)", key[:40], age_hours)
+        if age_hours < ttl:
+            logger.info("SerpAPI file cache hit: %s (%.1fh old, TTL %.0fh)", key[:40], age_hours, ttl)
             return entry["data"]
     return None
 
@@ -274,25 +336,26 @@ def _call_serpapi(
     force_refresh: bool = False,
     on_retry: Callable[[str], None] | None = None,
 ) -> tuple[list[dict], bool]:
-    """Make a SerpAPI call with retry/backoff and 24h caching.
+    """Make a SerpAPI call with retry/backoff and tiered caching.
 
     Returns (results_list, from_cache) so callers can skip delays on cache hits.
+
+    Cache improvements:
+    - Strategy B: Airport codes are canonicalised (sorted) so LHR,STN == STN,LHR
+    - Strategy E: TTL varies by travel date proximity (8h/24h/72h)
+    - Strategy H: google_travel_explore keys by month, not exact dates
     """
-    # Build cache key from query params (exclude api_key)
-    cache_key = (
-        f"{params_dict.get('engine', '')}|"
-        f"{params_dict.get('departure_id', '')}|"
-        f"{params_dict.get('arrival_id', '')}|"
-        f"{params_dict.get('outbound_date', '')}|"
-        f"{params_dict.get('return_date', '')}|"
-        f"{params_dict.get('outbound_times', '')}|"
-        f"{params_dict.get('return_times', '')}"
-    )
+    # Build canonical cache key (strategies B + H)
+    cache_key = _make_cache_key(params_dict)
+
+    # Strategy E: tiered TTL based on travel date proximity
+    out_date_str = params_dict.get("outbound_date", "")
+    ttl = _ttl_for_travel_date(out_date_str)
 
     _origin = params_dict.get("departure_id", "")
 
     if not force_refresh:
-        cached = _cache_get(cache_key)
+        cached = _cache_get(cache_key, ttl_hours=ttl)
         if cached is not None:
             _log_api_call(_origin, cache_key, len(cached), was_cached=True)
             return cached, True
