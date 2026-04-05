@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as st_components
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -801,6 +802,44 @@ if _show_search:
         label_visibility="collapsed",
         placeholder="Select departure airports…",
     )
+
+    # JS: close multiselect dropdown after each selection.
+    # Watches for new tag elements (= user picked an option) and blurs input.
+    st_components.html("""
+    <script>
+    (function() {
+        const doc = window.parent.document;
+        function setup() {
+            doc.querySelectorAll('[data-baseweb="select"]').forEach(function(sel) {
+                if (sel.dataset.autoClose) return;
+                sel.dataset.autoClose = '1';
+                // Count tags to detect new selections (not just dropdown opening)
+                let tagCount = sel.querySelectorAll('[data-baseweb="tag"]').length;
+                const obs = new MutationObserver(function() {
+                    const newCount = sel.querySelectorAll('[data-baseweb="tag"]').length;
+                    if (newCount > tagCount) {
+                        // A new tag was added = user selected an option
+                        tagCount = newCount;
+                        const input = sel.querySelector('input');
+                        if (input) {
+                            setTimeout(function() {
+                                input.blur();
+                                doc.body.click();
+                            }, 50);
+                        }
+                    }
+                    tagCount = newCount;  // also track removals
+                });
+                obs.observe(sel, { childList: true, subtree: true });
+            });
+        }
+        setTimeout(setup, 400);
+        setTimeout(setup, 1200);
+        setTimeout(setup, 3000);
+    })();
+    </script>
+    """, height=0)
+
     # Silently enforce max 3 — trim extras without a warning
     if len(selected_airports) > 3:
         selected_airports = selected_airports[:3]
