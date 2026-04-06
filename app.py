@@ -790,17 +790,25 @@ _toggle_rate = _fetch_exchange_rates().get(_toggle_cur, 1.0)
 _price_str = f"{_toggle_sym}{int(_last_price_ss * _toggle_rate)}"
 _stops_str   = {0: "Direct only", 1: "Max 1 stop", 2: "Any stops"}[_last_stops_ss]
 
+_has_searched = "last_log" in st.session_state or bool(st.session_state.get("deals"))
+
 if not _is_searching:
-    if st.session_state["search_open"]:
-        _toggle_label = "✈ Search Flights ▼"
+    if _has_searched and not st.session_state["search_open"]:
+        # After search: show a compact "New search" button instead of full toggle
+        if st.button("✈ New search", key="search_toggle", use_container_width=False):
+            st.session_state["search_open"] = True
+            st.rerun()
     else:
-        _toggle_label = f"✈ {_origins_str} · {_months_str} · {_price_str} · {_stops_str} ▲"
+        if st.session_state["search_open"]:
+            _toggle_label = "✈ Search Flights ▼"
+        else:
+            _toggle_label = f"✈ {_origins_str} · {_months_str} · {_price_str} · {_stops_str} ▲"
 
-    if st.button(_toggle_label, key="search_toggle", use_container_width=True):
-        st.session_state["search_open"] = not st.session_state["search_open"]
-        st.rerun()
+        if st.button(_toggle_label, key="search_toggle", use_container_width=True):
+            st.session_state["search_open"] = not st.session_state["search_open"]
+            st.rerun()
 
-# Widgets always render (hidden or not) so state persists via keys
+# Only show search form when panel is open, not scanning
 _show_search = st.session_state["search_open"] and not _is_searching
 
 if _show_search:
