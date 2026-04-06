@@ -780,14 +780,15 @@ _toggle_rate = _fetch_exchange_rates().get(_toggle_cur, 1.0)
 _price_str = f"{_toggle_sym}{int(_last_price_ss * _toggle_rate)}"
 _stops_str   = {0: "Direct only", 1: "Max 1 stop", 2: "Any stops"}[_last_stops_ss]
 
-if st.session_state["search_open"]:
-    _toggle_label = "✈ Search Flights ▼"
-else:
-    _toggle_label = f"✈ {_origins_str} · {_months_str} · {_price_str} · {_stops_str} ▲"
+if not _is_searching:
+    if st.session_state["search_open"]:
+        _toggle_label = "✈ Search Flights ▼"
+    else:
+        _toggle_label = f"✈ {_origins_str} · {_months_str} · {_price_str} · {_stops_str} ▲"
 
-if st.button(_toggle_label, key="search_toggle", use_container_width=True):
-    st.session_state["search_open"] = not st.session_state["search_open"]
-    st.rerun()
+    if st.button(_toggle_label, key="search_toggle", use_container_width=True):
+        st.session_state["search_open"] = not st.session_state["search_open"]
+        st.rerun()
 
 # Widgets always render (hidden or not) so state persists via keys
 _show_search = st.session_state["search_open"] and not _is_searching
@@ -1231,18 +1232,22 @@ if _is_searching:
         _n_airports = len(origins)
         _airport_list = ", ".join(_airport_names.get(o, o) for o in origins)
 
-        # Progress section
+        # Progress section — prominent scanning header
         route_summary = st.empty()
         route_summary.markdown(
-            f"<p style='font-family:Arial, sans-serif;font-size:0.78rem;"
-            f"color:#1a1a4a;letter-spacing:0.06em;margin:8px 0 12px'>"
-            f"SCANNING {_total_routes} ROUTES ACROSS {_n_airports} AIRPORT{'S' if _n_airports != 1 else ''}"
-            f" ({_airport_list})</p>",
+            f"<div style='text-align:center;padding:16px 0 8px'>"
+            f"<p style='font-family:Arial, sans-serif;font-size:1.1rem;"
+            f"color:#1a1a4a;font-weight:700;letter-spacing:0.06em;margin:0'>"
+            f"✈ SCANNING FLIGHTS</p>"
+            f"<p style='font-family:Arial, sans-serif;font-size:0.72rem;"
+            f"color:#9898b8;letter-spacing:0.05em;margin:4px 0 0'>"
+            f"{_total_routes} routes · {_n_airports} airport{'s' if _n_airports != 1 else ''}"
+            f" · {_airport_list}</p></div>",
             unsafe_allow_html=True,
         )
         scan_phrase_slot = st.empty()
         scan_phrase_slot.markdown(
-            f'<p class="scan-status">{_random_scan_phrase()}</p>',
+            f'<div style="text-align:center"><p class="scan-status">{_random_scan_phrase()}</p></div>',
             unsafe_allow_html=True,
         )
         progress_bar = st.progress(0.0)
@@ -1270,7 +1275,7 @@ if _is_searching:
                 if step - _last_phrase_step >= 2:
                     _phrase = f"Scanning {_airport_label} departures" if _airport_label else _random_scan_phrase()
                     scan_phrase_slot.markdown(
-                        f'<p class="scan-status">{_phrase}</p>',
+                        f'<div style="text-align:center"><p class="scan-status">{_phrase}</p></div>',
                         unsafe_allow_html=True,
                     )
                     _last_phrase_step = step
