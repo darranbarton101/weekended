@@ -1533,35 +1533,48 @@ if _has_results:
                 dep = _fmt_dt(deal.outbound_departure)
                 ret = _fmt_dt(deal.return_departure)
                 _is_fav = deal.id in st.session_state["fav_flights"]
-                _heart = "♥" if _is_fav else ""
-                _border_col = "#000080" if _is_fav else "#808080"
+                _heart = "♥" if _is_fav else "♡"
+                _heart_col = "#4a5bcc" if _is_fav else "#9898b8"
                 _bg = "#ffffff" if _is_fav else "transparent"
 
                 _raised = "box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff"
                 _origin_name = _airport_names.get(deal.origin, deal.origin)
+                link = _fix_deep_link(deal.deep_link)
+
+                # Build action buttons row inside the card
+                _book_html = ""
+                if link:
+                    _book_html = (
+                        f'<a href="{link}" target="_blank" style="'
+                        f"background:#4a5bcc;color:#fff;padding:3px 10px;"
+                        f"text-decoration:none;font-family:Arial,sans-serif;font-size:0.65rem;"
+                        f'font-weight:700;letter-spacing:0.03em">Book →</a>'
+                    )
+
                 _deal_html = (
                     f'<div style="background:{_bg};{_raised};'
-                    f'padding:8px 14px;margin-bottom:4px">'
+                    f'padding:8px 14px;margin-bottom:6px">'
+                    # Row 1: Price + dates + airline
                     f'<div style="font-family:Arial,sans-serif;font-size:0.78rem;'
                     f'color:#1a1a4a;display:flex;align-items:center;justify-content:space-between">'
                     f'<div>'
-                    f'<b style="color:#4a5bcc;font-size:1rem">{_fmt(deal.price_gbp, _cur, _rates)}</b>'
-                    f'&nbsp;&nbsp;{dep} → {ret}'
-                    f'&nbsp;&nbsp;{deal.airline}'
-                    f'&nbsp;&nbsp;{deal.nights} nights'
+                    f'<b style="color:#4a5bcc;font-size:1.05rem">{_fmt(deal.price_gbp, _cur, _rates)}</b>'
+                    f'&nbsp;&nbsp;<span style="font-size:0.75rem">{dep} → {ret}</span>'
                     f'</div>'
-                    f'<span style="color:#4a5bcc;font-size:1.2rem">{_heart}</span>'
+                    f'{_book_html}'
                     f'</div>'
-                    f'<div style="font-family:Arial,sans-serif;font-size:0.72rem;color:#9898b8;margin-top:3px">'
-                    f'Flying from <b style="color:#1a1a4a">{_origin_name}</b>'
+                    # Row 2: Airline + nights + origin
+                    f'<div style="font-family:Arial,sans-serif;font-size:0.68rem;color:#9898b8;margin-top:3px">'
+                    f'{deal.airline} · {deal.nights}N · from <b style="color:#1a1a4a">{_origin_name}</b>'
                     f'</div>'
                     f'</div>'
                 )
                 st.markdown(_deal_html, unsafe_allow_html=True)
 
-                fc1, fc2, fc3 = st.columns([2, 2, 2])
+                # Compact action buttons — small, tight row beneath card
+                fc1, fc2 = st.columns([1, 1])
                 with fc1:
-                    _fav_lbl = "♥ Favourited" if _is_fav else "♡ Favourite"
+                    _fav_lbl = "♥" if _is_fav else "♡"
                     if st.button(_fav_lbl, key=f"fav_{selected}_{i}", use_container_width=True):
                         if _is_fav:
                             st.session_state["fav_flights"].discard(deal.id)
@@ -1570,17 +1583,6 @@ if _has_results:
                         _save_favourites()
                         st.rerun()
                 with fc2:
-                    link = _fix_deep_link(deal.deep_link)
-                    if link:
-                        st.markdown(
-                            f"<a href='{link}' target='_blank' style='display:block;text-align:center;"
-                            f"padding:0.4rem;background:#ffffff;color:#1a1a4a;"
-                            f"box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;"
-                            f"text-decoration:none;font-family:Arial,sans-serif;font-size:0.75rem;"
-                            f"font-weight:700'>Book →</a>",
-                            unsafe_allow_html=True,
-                        )
-                with fc3:
                     with st.popover("Share", key=f"share_{selected}_{i}", use_container_width=True):
                         st.code(_share_deal_text(deal), language=None)
 
@@ -1719,44 +1721,44 @@ if _has_results:
                         ret = _fmt_dt(deal.return_departure)
                         city = deal.destination_city or deal.destination
                         country = deal.destination_country or ""
+                        _origin_name = _airport_names.get(deal.origin, deal.origin)
+                        link = _fix_deep_link(deal.deep_link)
+
+                        _book_html = ""
+                        if link:
+                            _book_html = (
+                                f'<a href="{link}" target="_blank" style="'
+                                f"background:#4a5bcc;color:#fff;padding:3px 10px;"
+                                f"text-decoration:none;font-family:Arial,sans-serif;font-size:0.65rem;"
+                                f'font-weight:700;letter-spacing:0.03em">Book →</a>'
+                            )
 
                         st.markdown(
-                            f"""<div style="background:#ffffff;box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;
-                                padding:8px 14px;margin-bottom:4px">
-                                <div style="display:flex;justify-content:space-between;align-items:baseline">
-                                    <div style="font-family:Arial,sans-serif;font-size:0.78rem;
-                                        color:#1a1a4a">
-                                        <b style="color:#4a5bcc;font-size:0.95rem">{_fmt(deal.price_gbp, _cur, _rates)}</b>
-                                        &nbsp;&nbsp; <b style="color:#4a5bcc">{city.upper()}</b>
-                                        <span style="color:#9898b8;font-size:0.68rem">&nbsp;{country.upper()}</span>
-                                        &nbsp;&nbsp;{dep} → {ret}
-                                        &nbsp;&nbsp;{deal.airline}
-                                        &nbsp;&nbsp;{deal.nights}N
-                                        &nbsp;&nbsp;{deal.origin}
-                                    </div>
-                                    <span style="color:#4a5bcc;font-size:1rem">♥</span>
-                                </div>
-                            </div>""",
+                            f'<div style="background:#ffffff;box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff;'
+                            f'padding:8px 14px;margin-bottom:6px">'
+                            f'<div style="font-family:Arial,sans-serif;font-size:0.78rem;'
+                            f'color:#1a1a4a;display:flex;align-items:center;justify-content:space-between">'
+                            f'<div>'
+                            f'<b style="color:#4a5bcc;font-size:1.05rem">{_fmt(deal.price_gbp, _cur, _rates)}</b>'
+                            f'&nbsp;&nbsp;<b style="color:#4a5bcc">{city.upper()}</b>'
+                            f'<span style="color:#9898b8;font-size:0.68rem">&nbsp;{country.upper()}</span>'
+                            f'</div>'
+                            f'{_book_html}'
+                            f'</div>'
+                            f'<div style="font-family:Arial,sans-serif;font-size:0.68rem;color:#9898b8;margin-top:3px">'
+                            f'{dep} → {ret} · {deal.airline} · {deal.nights}N · from <b style="color:#1a1a4a">{_origin_name}</b>'
+                            f'</div>'
+                            f'</div>',
                             unsafe_allow_html=True,
                         )
 
-                        fc1, fc2, fc3 = st.columns([2, 2, 2])
+                        fc1, fc2 = st.columns([1, 1])
                         with fc1:
-                            if st.button("Remove ♥", key=f"unfav_{i}", use_container_width=True):
+                            if st.button("♥ Remove", key=f"unfav_{i}", use_container_width=True):
                                 st.session_state["fav_flights"].discard(deal.id)
                                 _save_favourites()
                                 st.rerun()
                         with fc2:
-                            link = _fix_deep_link(deal.deep_link)
-                            if link:
-                                st.markdown(
-                                    f"<a href='{link}' target='_blank' style='display:block;text-align:center;"
-                                    f"padding:0.45rem;border:1px solid #808080;color:#1a1a4a;"
-                                    f"text-decoration:none;font-family:Arial, sans-serif;font-size:0.72rem;"
-                                    f"letter-spacing:0.08em;text-transform:uppercase'>Book →</a>",
-                                    unsafe_allow_html=True,
-                                )
-                        with fc3:
                             with st.popover("Share", key=f"fav_share_{i}", use_container_width=True):
                                 st.code(_share_deal_text(deal), language=None)
                 else:
