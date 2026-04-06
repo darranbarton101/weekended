@@ -769,12 +769,15 @@ _is_searching = st.session_state.get("_run_search", False)
 
 # Build toggle label — show current settings summary when collapsed
 _last_origins_ss = st.session_state.get("_last_origins", [])
-_last_months_ss  = st.session_state.get("_last_month_range", (1, 6))
-_last_price_ss   = st.session_state.get("_last_max_price", 300)
+_last_months_ss  = st.session_state.get("_last_month_range", (1, 3))
+_last_price_ss   = st.session_state.get("_last_max_price", 100)
 _last_stops_ss   = st.session_state.get("_last_max_stopovers", 0)
 _origins_str = ", ".join(_last_origins_ss) if _last_origins_ss else "—"
 _months_str  = f"{_last_months_ss[0]}–{_last_months_ss[1]} months"
-_price_str   = f"£{_last_price_ss}"
+_toggle_cur = st.session_state.get("_search_currency", "GBP")
+_toggle_sym = _CURRENCY_SYMBOLS.get(_toggle_cur, "£")
+_toggle_rate = _fetch_exchange_rates().get(_toggle_cur, 1.0)
+_price_str = f"{_toggle_sym}{int(_last_price_ss * _toggle_rate)}"
 _stops_str   = {0: "Direct only", 1: "Max 1 stop", 2: "Any stops"}[_last_stops_ss]
 
 if st.session_state["search_open"]:
@@ -854,13 +857,32 @@ if _show_search:
         _pref_months = _saved_prefs.get("month_range", [1, 3])
         month_range = st.slider("Months", 1, 12, tuple(_pref_months), label_visibility="collapsed")
     with rb2:
-        st.caption("MAX PRICE (GBP)")
-        _pref_price = _saved_prefs.get("max_price", int(dp.get("max_price_gbp", 100)))
-        max_price = st.slider(
-            "Max price", min_value=20, max_value=600,
-            value=_pref_price, step=10,
-            format="£%d", label_visibility="collapsed",
+        # Currency toggle for price display
+        _price_c1, _price_c2 = st.columns([3, 1.2])
+        with _price_c1:
+            st.caption("MAX PRICE")
+        with _price_c2:
+            _price_cur = st.selectbox(
+                "Currency", list(_CURRENCY_SYMBOLS.keys()),
+                index=0, label_visibility="collapsed", key="_search_currency",
+            )
+        _pref_price = _saved_prefs.get("max_price", 100)
+        # Override old default (300) with new default (100) for existing users
+        if _pref_price >= 300 and "max_price" in _saved_prefs:
+            _pref_price = 100
+        _price_sym = _CURRENCY_SYMBOLS.get(_price_cur, "£")
+        _price_rate = _fetch_exchange_rates().get(_price_cur, 1.0)
+        # Show slider in selected currency but store as GBP internally
+        _pref_price_display = int(_pref_price * _price_rate)
+        _max_display = int(600 * _price_rate)
+        _step_display = max(10, int(10 * _price_rate))
+        max_price_display = st.slider(
+            "Max price", min_value=int(20 * _price_rate), max_value=_max_display,
+            value=min(_pref_price_display, _max_display), step=_step_display,
+            format=f"{_price_sym}%d", label_visibility="collapsed",
         )
+        # Convert back to GBP for internal use
+        max_price = int(max_price_display / _price_rate) if _price_rate else max_price_display
 
     # ── Row C: Stops — radio buttons, default Direct only ──
     st.caption("STOPS")
@@ -1399,9 +1421,13 @@ if _has_results:
             )
 
         with tc3:
+            # Sync with search panel currency if set
+            _cur_options = list(_CURRENCY_SYMBOLS.keys())
+            _search_cur = st.session_state.get("_search_currency", "GBP")
+            _cur_idx = _cur_options.index(_search_cur) if _search_cur in _cur_options else 0
             st.selectbox(
-                "Currency", list(_CURRENCY_SYMBOLS.keys()),
-                index=0, label_visibility="collapsed", key="_currency",
+                "Currency", _cur_options,
+                index=_cur_idx, label_visibility="collapsed", key="_currency",
             )
 
         _cur = st.session_state.get("_currency", "GBP")
