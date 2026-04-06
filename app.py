@@ -1389,7 +1389,7 @@ if _has_results:
     _rates = _fetch_exchange_rates()
 
     with tab_all:
-        tc1, tc2, tc3 = st.columns([4, 1.2, 1])
+        tc1, tc2, tc3 = st.columns([3, 1.5, 1.2])
 
         with tc1:
             if deals:
@@ -1420,12 +1420,14 @@ if _has_results:
                 )
 
         with tc2:
+            st.caption("SORT BY")
             sort_opt = st.selectbox(
                 "Sort by", ["Price", "Destination", "Dates available"],
                 label_visibility="collapsed",
             )
 
         with tc3:
+            st.caption("CURRENCY")
             # Sync with search panel currency if set
             _cur_options = list(_CURRENCY_SYMBOLS.keys())
             _search_cur = st.session_state.get("_search_currency", "GBP")
