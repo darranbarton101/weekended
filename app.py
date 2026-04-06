@@ -417,6 +417,17 @@ st.markdown(f"""
         font-family: 'MS Sans Serif', Arial, sans-serif;
         font-size: 0.72rem;
     }}
+    /* Hide "Select all" option in multiselect dropdown */
+    .stMultiSelect [role="option"]:first-child[aria-label*="select all" i],
+    [data-baseweb="popover"] [role="option"]:first-child:has(input[type="checkbox"]),
+    .stMultiSelect [data-testid="stMultiSelectOptionCheckbox-Select all"] {{
+        display: none !important;
+    }}
+    /* Hide clear-all (X) button in multiselect — prevent accidental wipe */
+    .stMultiSelect [data-baseweb="clear-icon"],
+    .stMultiSelect [role="button"][aria-label="Clear all"] {{
+        display: none !important;
+    }}
 
     /* ── Progress bar ── */
     .stProgress > div > div {{ background-color: {_NAVY} !important; }}
@@ -1189,7 +1200,7 @@ def _group_destinations(deals_list):
 # ── Run search ───────────────────────────────────────────────────────────────
 
 # ── Rate limiting — 15-min cooldown per user ─────────────────────────────────
-_SCAN_COOLDOWN_MINUTES = 15
+_SCAN_COOLDOWN_MINUTES = 0  # disabled for testing — set to 15 for production
 
 def _check_rate_limit() -> tuple[bool, int]:
     """Check if user can scan. Returns (allowed, seconds_remaining)."""
