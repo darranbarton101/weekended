@@ -794,7 +794,18 @@ _has_searched = "last_log" in st.session_state or bool(st.session_state.get("dea
 
 if not _is_searching:
     if _has_searched and not st.session_state["search_open"]:
-        # After search: show a compact "New search" button instead of full toggle
+        # After search: show compact search summary + edit button
+        st.markdown(
+            f"<div style='display:flex;align-items:center;justify-content:space-between;"
+            f"padding:6px 10px;margin-bottom:8px;background:#f0eef5;"
+            f"box-shadow:inset -1px -1px #2a2a6e,inset 1px 1px #faf0ff,inset -2px -2px #9898b8,inset 2px 2px #ffffff'>"
+            f"<span style='font-family:Arial,sans-serif;font-size:0.7rem;color:#1a1a4a;"
+            f"letter-spacing:0.04em'>"
+            f"✈ {_origins_str} · {_months_str} · {_price_str} · {_stops_str}"
+            f"</span>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
         if st.button("✈ New search", key="search_toggle", use_container_width=False):
             st.session_state["search_open"] = True
             st.rerun()
@@ -1392,9 +1403,9 @@ if _is_searching:
 if "deals" not in st.session_state:
     st.session_state["deals"] = []
 
-# Filter deals to only show results from currently selected airports
+# Filter deals to match current search settings (origin + price)
 _all_deals = st.session_state.get("deals", [])
-deals = [d for d in _all_deals if d.origin in origins]
+deals = [d for d in _all_deals if d.origin in origins and d.price_gbp <= max_price]
 
 if "selected_dest" not in st.session_state:
     st.session_state["selected_dest"] = None

@@ -247,7 +247,7 @@ def get_user_prefs(conn: Client, uid: str) -> dict:
             row = resp.data[0]
             return {
                 "airports":   row.get("airports") or [],
-                "max_price":  row.get("max_price") or 300,
+                "max_price":  row.get("max_price") or 100,
                 "month_range": row.get("month_range") or [1, 6],
                 "stops":      row.get("stops") or "Any",
                 "dep_days":   row.get("dep_days") or {},
@@ -290,7 +290,7 @@ def save_user_prefs(conn: Client, uid: str, prefs: dict) -> None:
 
 def subscribe_email(conn: Client, email: str, uid: str,
                     airports: list[str] | None = None,
-                    max_price: int = 300,
+                    max_price: int = 100,
                     frequency: str = "weekly") -> tuple[bool, str]:
     """
     Subscribe an email for deal alerts. Returns (success, message).
