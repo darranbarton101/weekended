@@ -797,7 +797,13 @@ if _show_search:
     # ── Row A: Airport — full width ──
     st.caption("DEPARTING FROM (max 3)")
     if "_ms_airports" not in st.session_state:
-        st.session_state["_ms_airports"] = _saved_prefs.get("airports", [])
+        _init_airports = _saved_prefs.get("airports", [])
+        # Enforce max 3 on load — old prefs may have stored more
+        if len(_init_airports) > 3:
+            _init_airports = _init_airports[:3]
+        # Filter out any airport codes not in current options
+        _init_airports = [a for a in _init_airports if a in AIRPORT_OPTIONS]
+        st.session_state["_ms_airports"] = _init_airports
     selected_airports = st.multiselect(
         "airports",
         options=list(AIRPORT_OPTIONS.keys()),
