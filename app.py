@@ -417,13 +417,12 @@ st.markdown(f"""
         font-family: 'MS Sans Serif', Arial, sans-serif;
         font-size: 0.72rem;
     }}
-    /* Hide "Select all" option in multiselect dropdown */
-    .stMultiSelect [role="option"]:first-child[aria-label*="select all" i],
-    [data-baseweb="popover"] [role="option"]:first-child:has(input[type="checkbox"]),
-    .stMultiSelect [data-testid="stMultiSelectOptionCheckbox-Select all"] {{
-        display: none !important;
-    }}
-    /* Hide clear-all (X) button in multiselect — prevent accidental wipe */
+    /* Hide "Select all" option and clear-all in all multiselects */
+    [data-testid*="select-all"],
+    [data-testid*="Select all"],
+    [aria-label*="Select all"],
+    [aria-label*="select all"],
+    li[role="option"]:has(> div > label > span:only-child:empty),
     .stMultiSelect [data-baseweb="clear-icon"],
     .stMultiSelect [role="button"][aria-label="Clear all"] {{
         display: none !important;
@@ -854,9 +853,21 @@ if _show_search:
                 obs.observe(sel, { childList: true, subtree: true });
             });
         }
+        // Also hide "Select all" options in all multiselect dropdowns
+        function hideSelectAll() {
+            doc.querySelectorAll('[role="listbox"] [role="option"]').forEach(function(opt) {
+                var txt = (opt.textContent || '').trim().toLowerCase();
+                if (txt === 'select all' || txt === 'select all options') {
+                    opt.style.display = 'none';
+                }
+            });
+        }
+
         setTimeout(setup, 400);
         setTimeout(setup, 1200);
         setTimeout(setup, 3000);
+        // Run hideSelectAll on an interval since dropdowns are created dynamically
+        setInterval(hideSelectAll, 500);
     })();
     </script>
     """, height=0)
