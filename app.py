@@ -840,6 +840,7 @@ if _show_search:
         format_func=lambda x: AIRPORT_OPTIONS.get(x, x),
         label_visibility="collapsed",
         placeholder="Select departure airports…",
+        max_selections=3,
     )
 
     # JS: close multiselect dropdown after each selection.
@@ -891,11 +892,6 @@ if _show_search:
     </script>
     """, height=0)
 
-    # Silently enforce max 3 — trim extras without a warning
-    if len(selected_airports) > 3:
-        selected_airports = selected_airports[:3]
-        st.session_state["_ms_airports"] = selected_airports
-        st.rerun()
     origins = selected_airports or ["GLA"]
 
     # ── Row B: Sliders — 2 columns ──
